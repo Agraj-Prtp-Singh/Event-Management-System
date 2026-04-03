@@ -1,18 +1,12 @@
 const bcrypt = require('bcryptjs');
-<<<<<<< HEAD
-=======
 const crypto = require('crypto');
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const userRepository = require('../repositories/user.repository');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
-<<<<<<< HEAD
-=======
 const { ROLES, normalizeRole } = require('../constants/roles');
 const emailService = require('./email.service');
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
 class AuthService {
   async register(payload) {
@@ -23,21 +17,14 @@ class AuthService {
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
 
-<<<<<<< HEAD
-=======
     const role = normalizeRole(payload.role) || ROLES.STUDENT;
 
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
     const user = await userRepository.create({
       fullName: payload.fullName,
       phone: payload.phone,
       email: payload.email.toLowerCase(),
       passwordHash,
-<<<<<<< HEAD
-      role: payload.role || 'user'
-=======
       role
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
     });
 
     const token = this.#buildToken(user);
@@ -88,8 +75,6 @@ class AuthService {
     return user;
   }
 
-<<<<<<< HEAD
-=======
   async sendOtp(payload) {
     const user = await userRepository.findByEmail(payload.email.toLowerCase());
     if (!user) {
@@ -192,7 +177,6 @@ class AuthService {
       .digest('hex');
   }
 
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
   #buildToken(user) {
     return jwt.sign(
       {

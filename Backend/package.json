@@ -8,12 +8,8 @@
     "dev": "node src/server.js",
     "start": "node src/server.js",
     "lint": "echo \"Add ESLint config if needed\"",
-<<<<<<< HEAD
-    "check": "node --check src/server.js"
-=======
     "check": "node --check src/server.js",
     "migrate:roles": "node src/scripts/migrate-user-roles.js"
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
   },
   "keywords": [
     "event-management",
@@ -27,20 +23,12 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-<<<<<<< HEAD
-    "express": "^4.22.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.2",
-    "morgan": "^1.10.1"
-=======
     "express": "^4.21.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2",
     "morgan": "^1.10.1",
     "nodemailer": "^8.0.4"
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

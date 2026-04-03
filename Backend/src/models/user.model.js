@@ -1,8 +1,5 @@
 const mongoose = require('mongoose');
-<<<<<<< HEAD
-=======
 const { ROLES } = require('../constants/roles');
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
 const userSchema = new mongoose.Schema(
   {
@@ -32,10 +29,6 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-<<<<<<< HEAD
-      enum: ['user', 'organizer', 'admin'],
-      default: 'user'
-=======
       enum: [ROLES.STUDENT, ROLES.VENDOR, ROLES.EVENT_PLANNER, ROLES.ADMIN],
       default: ROLES.STUDENT
     },
@@ -54,7 +47,6 @@ const userSchema = new mongoose.Schema(
     otpVerifiedAt: {
       type: Date,
       default: null
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
     }
   },
   { timestamps: true }

@@ -42,13 +42,10 @@ requiredVars.forEach((envVar) => {
 
 validateMongoUri(process.env.MONGODB_URI);
 
-<<<<<<< HEAD
-=======
 if (process.env.MONGODB_URI_DIRECT) {
   validateMongoUri(process.env.MONGODB_URI_DIRECT);
 }
 
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: (() => {
@@ -58,10 +55,6 @@ const env = {
     return Number.isNaN(parsed) ? 5000 : parsed;
   })(),
   mongodbUri: process.env.MONGODB_URI,
-<<<<<<< HEAD
-  jwtSecret: process.env.JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d'
-=======
   mongodbDirectUri: process.env.MONGODB_URI_DIRECT || '',
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
@@ -90,7 +83,6 @@ const env = {
   smtpPass: process.env.SMTP_PASS || '',
   smtpFromEmail: process.env.SMTP_FROM_EMAIL || '',
   smtpFromName: process.env.SMTP_FROM_NAME || 'Event Management System'
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 };
 
 module.exports = env;

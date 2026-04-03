@@ -3,10 +3,7 @@ const registrationRepository = require('../repositories/registration.repository'
 const sanitizePagination = require('../utils/pagination');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
-<<<<<<< HEAD
-=======
 const { ROLES } = require('../constants/roles');
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
 class EventService {
   async createEvent(payload, userId) {
@@ -66,11 +63,7 @@ class EventService {
     }
 
     const isOwner = String(existingEvent.createdBy) === user.id;
-<<<<<<< HEAD
-    const isAdmin = user.role === 'admin';
-=======
     const isAdmin = user.role === ROLES.ADMIN;
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
     if (!isOwner && !isAdmin) {
       throw new AppError('Only owner or admin can update this event', HTTP_STATUS.FORBIDDEN);
@@ -88,11 +81,7 @@ class EventService {
     }
 
     const isOwner = String(existingEvent.createdBy) === user.id;
-<<<<<<< HEAD
-    const isAdmin = user.role === 'admin';
-=======
     const isAdmin = user.role === ROLES.ADMIN;
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
     if (!isOwner && !isAdmin) {
       throw new AppError('Only owner or admin can delete this event', HTTP_STATUS.FORBIDDEN);
@@ -110,11 +99,7 @@ class EventService {
     }
 
     const isOwner = String(event.createdBy) === user.id;
-<<<<<<< HEAD
-    const isAdmin = user.role === 'admin';
-=======
     const isAdmin = user.role === ROLES.ADMIN;
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
     if (!isOwner && !isAdmin) {
       throw new AppError('Only owner or admin can view registrations', HTTP_STATUS.FORBIDDEN);

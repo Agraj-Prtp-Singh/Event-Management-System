@@ -1,9 +1,6 @@
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
-<<<<<<< HEAD
-=======
 const { normalizeRole, listAcceptedRoleInputs } = require('../constants/roles');
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
 function isEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -32,10 +29,6 @@ function validateRegisterPayload(payload) {
     errors.push('Password must be at least 6 characters long');
   }
 
-<<<<<<< HEAD
-  if (payload.role && !['user', 'organizer', 'admin'].includes(payload.role)) {
-    errors.push('Role must be one of: user, organizer, admin');
-=======
   if (payload.role) {
     const normalizedRole = normalizeRole(payload.role);
     if (!normalizedRole) {
@@ -45,7 +38,6 @@ function validateRegisterPayload(payload) {
     } else {
       payload.role = normalizedRole;
     }
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
   }
 
   if (errors.length) {
@@ -69,11 +61,6 @@ function validateLoginPayload(payload) {
   }
 }
 
-<<<<<<< HEAD
-module.exports = {
-  validateRegisterPayload,
-  validateLoginPayload
-=======
 function validateSendOtpPayload(payload) {
   const errors = [];
 
@@ -107,5 +94,4 @@ module.exports = {
   validateLoginPayload,
   validateSendOtpPayload,
   validateVerifyOtpPayload
->>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 };
