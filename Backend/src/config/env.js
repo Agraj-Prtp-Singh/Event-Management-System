@@ -42,6 +42,13 @@ requiredVars.forEach((envVar) => {
 
 validateMongoUri(process.env.MONGODB_URI);
 
+<<<<<<< HEAD
+=======
+if (process.env.MONGODB_URI_DIRECT) {
+  validateMongoUri(process.env.MONGODB_URI_DIRECT);
+}
+
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: (() => {
@@ -51,8 +58,39 @@ const env = {
     return Number.isNaN(parsed) ? 5000 : parsed;
   })(),
   mongodbUri: process.env.MONGODB_URI,
+<<<<<<< HEAD
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d'
+=======
+  mongodbDirectUri: process.env.MONGODB_URI_DIRECT || '',
+  jwtSecret: process.env.JWT_SECRET,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+  otpExpiresMinutes: (() => {
+    const raw = process.env.OTP_EXPIRES_MINUTES;
+    if (!raw) return 10;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) || parsed <= 0 ? 10 : parsed;
+  })(),
+  otpMaxAttempts: (() => {
+    const raw = process.env.OTP_MAX_ATTEMPTS;
+    if (!raw) return 5;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) || parsed <= 0 ? 5 : parsed;
+  })(),
+  otpExposeInResponse: String(process.env.OTP_EXPOSE_IN_RESPONSE || '').toLowerCase() === 'true',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: (() => {
+    const raw = process.env.SMTP_PORT;
+    if (!raw) return 587;
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) || parsed <= 0 ? 587 : parsed;
+  })(),
+  smtpSecure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
+  smtpFromEmail: process.env.SMTP_FROM_EMAIL || '',
+  smtpFromName: process.env.SMTP_FROM_NAME || 'Event Management System'
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 };
 
 module.exports = env;

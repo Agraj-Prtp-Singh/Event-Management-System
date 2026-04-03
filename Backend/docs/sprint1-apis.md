@@ -19,10 +19,18 @@ Body:
   "phone": "+9779812345678",
   "email": "aarav@example.com",
   "password": "secret123",
+<<<<<<< HEAD
   "role": "user"
 }
 ```
 Response: `201 Created` with `token` and `user`.
+=======
+  "role": "student"
+}
+```
+Response: `201 Created` with `token` and `user`.
+Supported roles: `student`, `vendor`, `event_planner`, `admin`.
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 
 ### POST `/auth/login`
 Purpose: Login existing user.
@@ -41,10 +49,42 @@ Purpose: Get current logged-in profile.
 Auth: Bearer token required
 Response: `200 OK` with user profile.
 
+<<<<<<< HEAD
 ## 3) Event APIs
 ### POST `/events`
 Purpose: Create an event.
 Auth: Bearer token required (`organizer` or `admin`)
+=======
+### POST `/auth/otp/send`
+Purpose: Generate OTP for an existing user and send it to their email.
+Auth: No
+Body:
+```json
+{
+  "email": "aarav@example.com"
+}
+```
+Response: `200 OK` with OTP expiry info.
+The generated OTP is emailed using SMTP.
+Optional debug mode: if `OTP_EXPOSE_IN_RESPONSE=true`, the OTP is also included in the API response.
+
+### POST `/auth/otp/verify`
+Purpose: Verify OTP and issue auth token.
+Auth: No
+Body:
+```json
+{
+  "email": "aarav@example.com",
+  "otp": "123456"
+}
+```
+Response: `200 OK` with `token` and `user`.
+
+## 3) Event APIs
+### POST `/events`
+Purpose: Create an event.
+Auth: Bearer token required (`event_planner` or `admin`)
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 Body:
 ```json
 {

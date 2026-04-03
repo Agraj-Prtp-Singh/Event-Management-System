@@ -1,5 +1,14 @@
 const authService = require('../services/auth.service');
+<<<<<<< HEAD
 const { validateRegisterPayload, validateLoginPayload } = require('../validators/auth.validator');
+=======
+const {
+  validateRegisterPayload,
+  validateLoginPayload,
+  validateSendOtpPayload,
+  validateVerifyOtpPayload
+} = require('../validators/auth.validator');
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 const asyncHandler = require('../utils/asyncHandler');
 const HTTP_STATUS = require('../constants/httpStatus');
 
@@ -35,8 +44,39 @@ const getMyProfile = asyncHandler(async (req, res) => {
   });
 });
 
+<<<<<<< HEAD
 module.exports = {
   register,
   login,
   getMyProfile
+=======
+const sendOtp = asyncHandler(async (req, res) => {
+  validateSendOtpPayload(req.body);
+  const data = await authService.sendOtp(req.body);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'OTP generated successfully',
+    data
+  });
+});
+
+const verifyOtp = asyncHandler(async (req, res) => {
+  validateVerifyOtpPayload(req.body);
+  const data = await authService.verifyOtp(req.body);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'OTP verified successfully',
+    data
+  });
+});
+
+module.exports = {
+  register,
+  login,
+  getMyProfile,
+  sendOtp,
+  verifyOtp
+>>>>>>> e5d7d39399b246ec7b103406ed563368cf8d6abc
 };
