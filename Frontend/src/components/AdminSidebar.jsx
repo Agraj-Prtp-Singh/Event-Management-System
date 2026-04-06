@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Settings,
 } from "lucide-react";
+import logo from "../assets/logo.png";
 
 const navItems = [
   { id: "home", label: "Home", icon: Home },
@@ -34,7 +35,7 @@ export default function AdminSidebar() {
 
       <div className="mt-6 flex flex-col items-center">
         <img
-          src="/logo.png"
+          src={logo}
           alt="AfterHour Events logo"
           className={`${isOpen ? "h-28 w-28" : "h-14 w-14"} object-contain transition-all duration-300`}
         />

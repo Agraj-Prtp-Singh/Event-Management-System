@@ -4,6 +4,7 @@ import OTPPage from "./pages/OTPPage";
 import LandingPage from "./pages/LandingPage";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminDashboardCard from "./components/AdminDashboardCard";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={<AdminSidebar />} />
       </Routes> */}
-      <AdminDashboardCard />
+      <Admin />
+
     </div>
   );
 }
