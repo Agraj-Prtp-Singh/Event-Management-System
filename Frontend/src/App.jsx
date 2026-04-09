@@ -3,6 +3,8 @@ import Register from "./pages/RegisterPage";
 import OTPPage from "./pages/OTPPage";
 import LandingPage from "./pages/LandingPage";
 import AdminSidebar from "./components/AdminSidebar";
+import Login from "./pages/LoginPage";
+
 
 function App() {
   return (
@@ -12,6 +14,7 @@ function App() {
         <Route path="/otp" element={<OTPPage />} />
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={<AdminSidebar />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </div>
   );
