@@ -127,6 +127,12 @@ Response: `200 OK`
 Purpose: List current user's registered events.
 Auth: Bearer token required
 Response: `200 OK`
+Each registration now includes a `ticket.qrPayload` signed token for QR generation in the student dashboard.
+
+### GET `/registrations/ticket/scan?token=<qrPayload>`
+Purpose: Resolve a ticket QR payload into registration + event details.
+Auth: Bearer token required (must be the same logged-in user that owns the ticket)
+Response: `200 OK`
 
 ## Standard Error Response
 ```json
