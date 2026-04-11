@@ -15,9 +15,9 @@ Auth: No
 Body:
 ```json
 {
-  "fullName": "Aarav Sharma",
+  "fullName": "Rohan Shrestha",
   "phone": "+9779812345678",
-  "email": "aarav@example.com",
+  "email": "rohan@example.com",
   "password": "secret123",
   "role": "student"
 }
@@ -31,7 +31,7 @@ Auth: No
 Body:
 ```json
 {
-  "email": "aarav@example.com",
+  "email": "rohan@example.com",
   "password": "secret123"
 }
 ```
