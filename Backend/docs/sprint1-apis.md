@@ -15,9 +15,9 @@ Auth: No
 Body:
 ```json
 {
-  "fullName": "Aarav Sharma",
+  "fullName": "Rohan Shrestha",
   "phone": "+9779812345678",
-  "email": "aarav@example.com",
+  "email": "rohan@example.com",
   "password": "secret123",
   "role": "student"
 }
@@ -31,7 +31,7 @@ Auth: No
 Body:
 ```json
 {
-  "email": "aarav@example.com",
+  "email": "rohan@example.com",
   "password": "secret123"
 }
 ```
@@ -126,6 +126,12 @@ Response: `200 OK`
 ### GET `/registrations/me`
 Purpose: List current user's registered events.
 Auth: Bearer token required
+Response: `200 OK`
+Each registration now includes a `ticket.qrPayload` signed token for QR generation in the student dashboard.
+
+### GET `/registrations/ticket/scan?token=<qrPayload>`
+Purpose: Resolve a ticket QR payload into registration + event details.
+Auth: Bearer token required (must be the same logged-in user that owns the ticket)
 Response: `200 OK`
 
 ## Standard Error Response
