@@ -6,6 +6,7 @@ const validateObjectId = require('../middlewares/validateObjectId.middleware');
 const router = express.Router();
 
 router.get('/me', authMiddleware, registrationController.listMyRegistrations);
+router.get('/ticket/scan', authMiddleware, registrationController.scanTicketForEventDetails);
 router.post('/:eventId', authMiddleware, validateObjectId('eventId'), registrationController.registerForEvent);
 router.delete('/:eventId', authMiddleware, validateObjectId('eventId'), registrationController.cancelMyRegistration);
 

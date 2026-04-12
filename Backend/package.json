@@ -9,8 +9,7 @@
     "start": "node src/server.js",
     "lint": "echo \"Add ESLint config if needed\"",
     "check": "node --check src/server.js",
-    "migrate:roles": "node src/scripts/migrate-user-roles.js",
-    "migrate:db:test-to-event": "node src/scripts/sync-test-to-event-management.js"
+    "migrate:roles": "node src/scripts/migrate-user-roles.js"
   },
   "keywords": [
     "event-management",
@@ -24,7 +23,7 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-    "express": "^4.22.1",
+    "express": "^4.21.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2",
