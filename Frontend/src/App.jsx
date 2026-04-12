@@ -3,20 +3,34 @@ import Register from "./pages/RegisterPage";
 import OTPPage from "./pages/OTPPage";
 import LandingPage from "./pages/LandingPage";
 import AdminSidebar from "./components/AdminSidebar";
+import StudentSidebar from "./components/StudentSidebar";
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminEvents from "./pages/Admin.jsx";
 import Footer from "./components/Footer";
 
-import StudentDashboard from "./pages/Studentdashboard"; 
+import StudentDashboard from "./pages/Studentdashboard";
 import BrowseStudentEvents from "./pages/BrowseStudentEvents";
 import StudentBookings from "./pages/StudentBookings";
 import StudentEventDetail from "./pages/StudentEventDetail";
 
-// RENAMED THIS FROM AdminLayout TO DashboardLayout
-function DashboardLayout({ children }) {
+// Admin layout uses AdminSidebar
+function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-black">
       <AdminSidebar />
+      <div className="flex min-h-screen flex-1 flex-col">
+        <main className="flex-1 overflow-y-auto">{children}</main>
+        <Footer />
+      </div>
+    </div>
+  );
+}
+
+// Student layout uses StudentSidebar
+function StudentLayout({ children }) {
+  return (
+    <div className="flex min-h-screen bg-[#F8FAFC] text-black">
+      <StudentSidebar />
       <div className="flex min-h-screen flex-1 flex-col">
         <main className="flex-1 overflow-y-auto">{children}</main>
         <Footer />
@@ -32,55 +46,51 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/otp" element={<OTPPage />} />
 
-      {/* Admin Routes now use the renamed DashboardLayout */}
+      {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
         element={
-          <DashboardLayout>
+          <AdminLayout>
             <AdminDashboardPage />
-          </DashboardLayout>
+          </AdminLayout>
         }
       />
       <Route
-        path="/admin/events"
-        element={
-          <DashboardLayout>
-            <AdminEvents />
-          </DashboardLayout>
-        }
-      />
+  path="/admin/events"
+  element={<AdminEvents />}
+/>
 
-      {/* Student Routes */}
+      {/* Student Routes — now use StudentLayout with StudentSidebar */}
       <Route
         path="/student-dashboard"
         element={
-          <DashboardLayout>
+          <StudentLayout>
             <StudentDashboard />
-          </DashboardLayout>
+          </StudentLayout>
         }
       />
       <Route
         path="/student/browse"
         element={
-          <DashboardLayout>
+          <StudentLayout>
             <BrowseStudentEvents />
-          </DashboardLayout>
+          </StudentLayout>
         }
       />
       <Route
         path="/student/bookings"
         element={
-          <DashboardLayout>
+          <StudentLayout>
             <StudentBookings />
-          </DashboardLayout>
+          </StudentLayout>
         }
       />
       <Route
         path="/student/event/:id"
         element={
-          <DashboardLayout>
+          <StudentLayout>
             <StudentEventDetail />
-          </DashboardLayout>
+          </StudentLayout>
         }
       />
 
