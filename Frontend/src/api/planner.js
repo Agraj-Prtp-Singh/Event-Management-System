@@ -18,11 +18,11 @@ const normalizeResponse = (response) => {
   return payload?.items ?? payload;
 };
 
-// Fetch student dashboard stats (events attended, upcoming, total bookings)
-export const getStudentStats = async () => {
+// Fetch planner dashboard stats
+export const getPlannerStats = async () => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/student/stats`,
+      `${BASE_URL}/planner/stats`,
       getAuthHeaders()
     );
     return normalizeResponse(response);
@@ -30,16 +30,16 @@ export const getStudentStats = async () => {
     throw new Error(
       error.response?.data?.message ||
         error.response?.data?.error ||
-        "Failed to fetch student stats"
+        "Failed to fetch planner stats"
     );
   }
 };
 
-// Fetch student's bookings
-export const getStudentBookings = async () => {
+// Fetch planner's own events
+export const getPlannerEvents = async () => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/student/bookings`,
+      `${BASE_URL}/planner/events`,
       getAuthHeaders()
     );
     return normalizeResponse(response);
@@ -47,51 +47,17 @@ export const getStudentBookings = async () => {
     throw new Error(
       error.response?.data?.message ||
         error.response?.data?.error ||
-        "Failed to fetch bookings"
+        "Failed to fetch planner events"
     );
   }
 };
 
-// Fetch all available events (for browse / dashboard preview)
-export const getEvents = async (params = {}) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/events`, {
-      ...getAuthHeaders(),
-      params,
-    });
-    return normalizeResponse(response);
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to fetch events"
-    );
-  }
-};
-
-// Fetch a single event by ID
-export const getEventById = async (eventId) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/events/${eventId}`,
-      getAuthHeaders()
-    );
-    return normalizeResponse(response);
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to fetch event details"
-    );
-  }
-};
-
-// Book an event
-export const bookEvent = async (eventId) => {
+// Create a new event
+export const createEvent = async (eventData) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/student/bookings`,
-      { eventId },
+      `${BASE_URL}/planner/events`,
+      eventData,
       getAuthHeaders()
     );
     return normalizeResponse(response);
@@ -99,16 +65,17 @@ export const bookEvent = async (eventId) => {
     throw new Error(
       error.response?.data?.message ||
         error.response?.data?.error ||
-        "Failed to book event"
+        "Failed to create event"
     );
   }
 };
 
-// Cancel a booking
-export const cancelBooking = async (bookingId) => {
+// Update an existing event
+export const updateEvent = async (eventId, eventData) => {
   try {
-    const response = await axios.delete(
-      `${BASE_URL}/student/bookings/${bookingId}`,
+    const response = await axios.put(
+      `${BASE_URL}/planner/events/${eventId}`,
+      eventData,
       getAuthHeaders()
     );
     return normalizeResponse(response);
@@ -116,7 +83,58 @@ export const cancelBooking = async (bookingId) => {
     throw new Error(
       error.response?.data?.message ||
         error.response?.data?.error ||
-        "Failed to cancel booking"
+        "Failed to update event"
+    );
+  }
+};
+
+// Delete an event
+export const deleteEvent = async (eventId) => {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/planner/events/${eventId}`,
+      getAuthHeaders()
+    );
+    return normalizeResponse(response);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to delete event"
+    );
+  }
+};
+
+// Fetch attendees for a specific event
+export const getEventAttendees = async (eventId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/planner/events/${eventId}/attendees`,
+      getAuthHeaders()
+    );
+    return normalizeResponse(response);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch attendees"
+    );
+  }
+};
+
+// Fetch all attendees across planner's events
+export const getAllAttendees = async () => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/planner/attendees`,
+      getAuthHeaders()
+    );
+    return normalizeResponse(response);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch attendees"
     );
   }
 };

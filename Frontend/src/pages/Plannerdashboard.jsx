@@ -1,36 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { getPlannerStats, getPlannerEvents, deleteEvent } from "../api/planner";
 
-const stats = [
-  { value: "8", label: "Events" },
-  { value: "312", label: "Attendees" },
-  { value: "87%", label: "Fill rate" },
-  { value: "3.2K", label: "Revenue" },
-];
-
-const events = [
-  {
-    name: "AI Event",
-    location: "Kathmandu",
-    spots: "37 spots left",
-    date: "Mon Mar 30 2026",
-    status: "Pending",
-  },
+const FALLBACK_STATS = [
+  { value: "0", label: "Events" },
+  { value: "0", label: "Attendees" },
+  { value: "0%", label: "Fill rate" },
+  { value: "0", label: "Revenue" },
 ];
 
 export default function VendorDashboard() {
   const navigate = useNavigate();
 
+  const [stats, setStats] = useState(FALLBACK_STATS);
+  const [events, setEvents] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    // Fetch stats
+    getPlannerStats()
+      .then((data) => {
+        setStats([
+          { value: String(data.totalEvents ?? 0), label: "Events" },
+          { value: String(data.totalAttendees ?? 0), label: "Attendees" },
+          { value: `${data.fillRate ?? 0}%`, label: "Fill rate" },
+          { value: String(data.revenue ?? 0), label: "Revenue" },
+        ]);
+      })
+      .catch(() => {
+        // silently use fallback stats
+      })
+      .finally(() => setLoadingStats(false));
+
+    // Fetch events
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = () => {
+    setLoadingEvents(true);
+    getPlannerEvents()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.events ?? [];
+        setEvents(list);
+      })
+      .catch(() => {
+        setError("Could not load events. Showing cached data.");
+      })
+      .finally(() => setLoadingEvents(false));
+  };
+
+  const handleDelete = async (eventId) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    setDeletingId(eventId);
+    try {
+      await deleteEvent(eventId);
+      setEvents((prev) => prev.filter((e) => e._id !== eventId && e.id !== eventId));
+    } catch (err) {
+      setError(err.message || "Failed to delete event.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 w-full">
       <div className="max-w-5xl mx-auto space-y-7">
-        
+
         {/* Header Section */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <button
-            // Fixed navigation to match App.jsx route
             onClick={() => navigate("/planner/events")}
             className="flex items-center gap-2 bg-white border-2 border-gray-900 rounded-full px-5 py-2 text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all cursor-pointer shadow-sm"
           >
@@ -38,17 +81,33 @@ export default function VendorDashboard() {
           </button>
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+            {error}
+          </div>
+        )}
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="bg-white border border-black/10 rounded-2xl shadow-sm flex flex-col items-center py-6 px-3"
-            >
-              <span className="text-2xl font-bold text-gray-900">{s.value}</span>
-              <span className="text-xs text-gray-500 mt-1">{s.label}</span>
-            </div>
-          ))}
+          {loadingStats
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-black/10 rounded-2xl shadow-sm flex flex-col items-center py-6 px-3"
+                >
+                  <div className="h-8 w-12 rounded-md bg-slate-100 animate-pulse mb-2" />
+                  <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
+                </div>
+              ))
+            : stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="bg-white border border-black/10 rounded-2xl shadow-sm flex flex-col items-center py-6 px-3"
+                >
+                  <span className="text-2xl font-bold text-gray-900">{s.value}</span>
+                  <span className="text-xs text-gray-500 mt-1">{s.label}</span>
+                </div>
+              ))}
         </div>
 
         {/* My Events Table */}
@@ -60,31 +119,74 @@ export default function VendorDashboard() {
               <span className="text-center">Date</span>
               <span className="text-center">Status</span>
             </div>
-            {events.map((ev, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-3 items-center px-6 py-4 border-b border-black/5 last:border-b-0 hover:bg-gray-50 transition"
-              >
-                <div>
-                  <div className="font-semibold text-gray-900 text-sm">{ev.name}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{ev.location} • {ev.spots}</div>
-                </div>
-                <div className="text-center text-xs text-gray-500">{ev.date}</div>
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-full px-3 py-1 font-medium">
-                    {ev.status}
-                  </span>
-                  <div className="flex gap-1">
-                    <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition cursor-pointer">
-                      <Pencil size={13} />
-                    </button>
-                    <button className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 transition cursor-pointer">
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
+
+            {loadingEvents ? (
+              <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
+                <Loader2 size={20} className="animate-spin" />
+                <span className="text-sm">Loading events…</span>
               </div>
-            ))}
+            ) : events.length === 0 ? (
+              <div className="text-center text-gray-400 text-sm py-12">
+                No events yet. Create your first event!
+              </div>
+            ) : (
+              events.map((ev) => {
+                const eventId = ev._id || ev.id;
+                const statusColor =
+                  ev.status === "Approved"
+                    ? "bg-green-100 text-green-700 border-green-200"
+                    : ev.status === "Rejected"
+                    ? "bg-red-100 text-red-600 border-red-200"
+                    : "bg-yellow-100 text-yellow-700 border-yellow-200";
+
+                return (
+                  <div
+                    key={eventId}
+                    className="grid grid-cols-3 items-center px-6 py-4 border-b border-black/5 last:border-b-0 hover:bg-gray-50 transition"
+                  >
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm">{ev.title || ev.name}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {ev.location} {ev.spotsLeft != null ? `• ${ev.spotsLeft} spots left` : ""}
+                      </div>
+                    </div>
+                    <div className="text-center text-xs text-gray-500">
+                      {ev.startDate
+                        ? new Date(ev.startDate).toDateString()
+                        : ev.date || "—"}
+                    </div>
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                      <span
+                        className={`text-xs border rounded-full px-3 py-1 font-medium ${statusColor}`}
+                      >
+                        {ev.status || "Pending"}
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => navigate(`/planner/events?edit=${eventId}`)}
+                          className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition cursor-pointer"
+                          title="Edit event"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(eventId)}
+                          disabled={deletingId === eventId}
+                          className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 transition cursor-pointer disabled:opacity-50"
+                          title="Delete event"
+                        >
+                          {deletingId === eventId ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </section>
 

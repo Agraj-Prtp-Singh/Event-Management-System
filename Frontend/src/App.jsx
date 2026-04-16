@@ -4,10 +4,11 @@ import OTPPage from "./pages/OTPPage";
 import LandingPage from "./pages/LandingPage";
 import AdminSidebar from "./components/AdminSidebar";
 import StudentSidebar from "./components/StudentSidebar";
-import PlannerSidebar from "./components/Plannersidebar";
+import PlannerSidebar from "./components/PlannerSidebar";
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminEvents from "./pages/Admin.jsx";
 import Footer from "./components/Footer";
+import Login from "./pages/LoginPage";
 import AskAI from "./components/AskAI";
 
 import StudentDashboard from "./pages/Studentdashboard";
@@ -62,6 +63,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/register" element={<Register />} />
       <Route path="/otp" element={<OTPPage />} />
+      <Route path="/login" element={<Login />} />
 
       {/* Admin Routes */}
       <Route

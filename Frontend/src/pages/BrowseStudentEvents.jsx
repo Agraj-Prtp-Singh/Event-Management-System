@@ -1,29 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
   SlidersHorizontal,
   MapPin,
   CalendarDays,
+  Loader2,
 } from "lucide-react";
+import { getEvents } from "../api/student";
 
-const categories = ["All", "Tech", "Social", "Career", "Arts"];
+const categories = ["All", "Tech", "Social", "Career", "Arts", "Business"];
 
-const events = [
-  { id: 1, title: "Tech Summit 2026", date: "March 28 · Kathmandu", category: "Tech", categoryColor: "bg-blue-100 text-blue-700" },
-  { id: 2, title: "Design Workshop", date: "April 23 · Kathmandu", category: "Design", categoryColor: "bg-green-100 text-green-700" },
-  { id: 3, title: "Startup Night", date: "April 18 · Lalitpur", category: "Business", categoryColor: "bg-yellow-100 text-yellow-700" },
-  { id: 4, title: "Campus Music Fest", date: "April 18 · Outdoor Stage", category: "Social", categoryColor: "bg-purple-100 text-purple-700" },
-  { id: 5, title: "Career Fair 2026", date: "May 5 · Kathmandu", category: "Career", categoryColor: "bg-orange-100 text-orange-700" },
-  { id: 6, title: "AI & Future Workshop", date: "April 25 · Lab 3B", category: "Tech", categoryColor: "bg-blue-100 text-blue-700" },
+const CATEGORY_COLORS = {
+  Tech: "bg-blue-100 text-blue-700",
+  Social: "bg-purple-100 text-purple-700",
+  Career: "bg-orange-100 text-orange-700",
+  Arts: "bg-pink-100 text-pink-700",
+  Business: "bg-yellow-100 text-yellow-700",
+  Other: "bg-gray-100 text-gray-600",
+};
+
+// Fallback events in case backend is unreachable
+const FALLBACK_EVENTS = [
+  { id: 1, title: "Tech Summit 2026", date: "March 28 · Kathmandu", category: "Tech" },
+  { id: 2, title: "Design Workshop", date: "April 23 · Kathmandu", category: "Arts" },
+  { id: 3, title: "Startup Night", date: "April 18 · Lalitpur", category: "Business" },
+  { id: 4, title: "Campus Music Fest", date: "April 18 · Outdoor Stage", category: "Social" },
+  { id: 5, title: "Career Fair 2026", date: "May 5 · Kathmandu", category: "Career" },
+  { id: 6, title: "AI & Future Workshop", date: "April 25 · Lab 3B", category: "Tech" },
 ];
 
 export default function BrowseEvents() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
   const navigate = useNavigate();
 
-  const filtered = events.filter((e) => {
+  useEffect(() => {
+    getEvents()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.events ?? [];
+        if (list.length > 0) {
+          setEvents(list);
+        } else {
+          // Empty response — show fallback
+          setEvents(FALLBACK_EVENTS);
+          setUsingFallback(true);
+        }
+      })
+      .catch(() => {
+        setEvents(FALLBACK_EVENTS);
+        setUsingFallback(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Normalize event shape from backend vs fallback
+  const normalizeEvent = (ev) => ({
+    id: ev._id || ev.id,
+    title: ev.title || ev.name || "Untitled Event",
+    date: ev.startDate
+      ? `${new Date(ev.startDate).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+        })} · ${ev.location || ""}`
+      : ev.date || "",
+    category: ev.category || "Other",
+    location: ev.location || "",
+  });
+
+  const normalized = events.map(normalizeEvent);
+
+  const filtered = normalized.filter((e) => {
     const matchCat = activeCategory === "All" || e.category === activeCategory;
     const matchSearch = e.title.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
@@ -33,10 +83,19 @@ export default function BrowseEvents() {
     <div className="flex flex-col items-center px-4 md:px-8 py-8 bg-[#F8FAFC]">
       <div className="w-full max-w-5xl space-y-6">
 
+        {usingFallback && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-4 py-2.5">
+            Showing sample events — connect to the backend to see live data.
+          </div>
+        )}
+
         {/* Search + Filter */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               placeholder="Search Events..."
@@ -58,9 +117,10 @@ export default function BrowseEvents() {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={`px-5 py-1.5 rounded-full text-sm font-medium border transition-all cursor-pointer whitespace-nowrap
-                ${activeCategory === cat
-                  ? "bg-[#0b0220] text-white border-[#0b0220]"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                ${
+                  activeCategory === cat
+                    ? "bg-[#0b0220] text-white border-[#0b0220]"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
                 }`}
             >
               {cat}
@@ -69,39 +129,54 @@ export default function BrowseEvents() {
         </div>
 
         {/* Event Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group"
-            >
-              <div className="h-36 md:h-40 bg-[#0b0220] flex items-center justify-center">
-                <CalendarDays size={40} className="text-white/20" />
+        {loading ? (
+          <div className="flex items-center justify-center py-24 text-slate-400 gap-2">
+            <Loader2 size={24} className="animate-spin" />
+            <span className="text-sm">Loading events…</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filtered.map((event) => (
+              <div
+                key={event.id}
+                className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group"
+              >
+                <div className="h-36 md:h-40 bg-[#0b0220] flex items-center justify-center">
+                  <CalendarDays size={40} className="text-white/20" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                      CATEGORY_COLORS[event.category] || CATEGORY_COLORS.Other
+                    }`}
+                  >
+                    {event.category}
+                  </span>
+                  <p className="font-bold text-gray-900 text-sm md:text-base leading-tight">
+                    {event.title}
+                  </p>
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <MapPin size={11} /> {event.date}
+                  </p>
+                  <button
+                    onClick={() => navigate(`/student/event/${event.id}`)}
+                    className="w-full mt-1 border border-black/10 text-gray-700 text-xs font-bold py-2.5 rounded-lg hover:bg-[#0b0220] hover:text-white transition-colors cursor-pointer"
+                  >
+                    View Details
+                  </button>
+                </div>
               </div>
-              <div className="p-4 space-y-3">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${event.categoryColor}`}>
-                  {event.category}
-                </span>
-                <p className="font-bold text-gray-900 text-sm md:text-base leading-tight">{event.title}</p>
-                <p className="text-xs text-gray-400 flex items-center gap-1">
-                  <MapPin size={11} /> {event.date}
-                </p>
-                <button
-                  onClick={() => navigate(`/student/event/${event.id}`)}
-                  className="w-full mt-1 border border-black/10 text-gray-700 text-xs font-bold py-2.5 rounded-lg hover:bg-[#0b0220] hover:text-white transition-colors cursor-pointer"
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {filtered.length === 0 && (
-            <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-              <p className="text-gray-400 text-sm italic">No events found matching "{search}"</p>
-            </div>
-          )}
-        </div>
+            {filtered.length === 0 && (
+              <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                <p className="text-gray-400 text-sm italic">
+                  No events found{search ? ` matching "${search}"` : ""}.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

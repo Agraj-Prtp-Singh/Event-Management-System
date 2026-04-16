@@ -227,9 +227,12 @@ export default function RegisterCard() {
 
           <p className="text-center text-sm">
             Already have an account?{" "}
-            <span className="text-blue-500 font-bold cursor-pointer">
-              Login
-            </span>
+<span 
+  className="text-blue-500 font-bold cursor-pointer hover:underline"
+  onClick={() => navigate("/login")}
+>
+  Login
+</span>
           </p>
         </div>
       </form>
