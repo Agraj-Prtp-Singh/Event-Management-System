@@ -6,7 +6,8 @@ import AdminSidebar from "./components/AdminSidebar";
 import StudentSidebar from "./components/StudentSidebar";
 import PlannerSidebar from "./components/PlannerSidebar";
 import AdminDashboardPage from "./pages/AdminDashboard";
-import AdminEvents from "./pages/Admin.jsx";
+import AdminEvents from "./pages/AdminEvents";
+import AdminSettings from "./pages/AdminSettings";
 import Footer from "./components/Footer";
 import Login from "./pages/LoginPage";
 import AskAI from "./components/AskAI";
@@ -91,6 +92,14 @@ function App() {
       <Route
         path="/student/event/:id"
         element={<StudentLayout><StudentEventDetail /></StudentLayout>}
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <AdminLayout>
+            <AdminSettings />
+          </AdminLayout>
+        }
       />
 
       {/* Planner Routes - Standardized to /planner */}
