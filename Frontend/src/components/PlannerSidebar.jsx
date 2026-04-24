@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import { clearAuthSession } from "../utils/auth";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, to: "/planner/dashboard" },
@@ -25,10 +26,7 @@ export default function PlannerSidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
+    clearAuthSession();
     navigate("/");
   };
 

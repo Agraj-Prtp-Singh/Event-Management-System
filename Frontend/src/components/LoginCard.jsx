@@ -2,13 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginUser } from "../api/auth";
-
-const ROLE_ROUTES = {
-  admin: "/admin/dashboard",
-  student: "/student-dashboard",
-  planner: "/planner/dashboard",
-  vendor: "/planner/dashboard",
-};
+import { getHomeRouteForRole, persistAuthSession } from "../utils/auth";
 
 export default function LoginCard() {
   const [email, setEmail] = useState("");
@@ -34,17 +28,8 @@ export default function LoginCard() {
     try {
       const data = await loginUser({ email, password });
 
-      // Store token — use localStorage if "remember me", otherwise sessionStorage
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem("token", data.token);
-      if (data.user) {
-        storage.setItem("user", JSON.stringify(data.user));
-      }
-
-      // Redirect based on role returned from backend
-      const role = data.user?.role?.toLowerCase();
-      const destination = ROLE_ROUTES[role] ?? "/";
-      navigate(destination);
+      persistAuthSession(data, rememberMe);
+      navigate(getHomeRouteForRole(data.user?.role), { replace: true });
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
     } finally {
@@ -64,7 +49,6 @@ export default function LoginCard() {
         </p>
 
         <div className="space-y-4">
-          {/* Email */}
           <div className="flex flex-col">
             <label className="font-semibold mb-1 text-sm">
               Email address<span className="text-red-500">*</span>
@@ -80,7 +64,6 @@ export default function LoginCard() {
             />
           </div>
 
-          {/* Password */}
           <div className="flex flex-col">
             <label className="font-semibold mb-1 text-sm">
               Password<span className="text-red-500">*</span>
@@ -88,7 +71,7 @@ export default function LoginCard() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••••"
+                placeholder="**********"
                 name="password"
                 className="input pr-10 px-4 py-2 border rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
                 value={password}
@@ -105,7 +88,6 @@ export default function LoginCard() {
             </div>
           </div>
 
-          {/* Remember me + Forgot password */}
           <div className="flex items-center justify-between mt-1">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -123,38 +105,48 @@ export default function LoginCard() {
 
           {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full mt-2 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer font-semibold shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
-            {loading ? "Signing in…" : "Log in"}
+            {loading ? "Signing in..." : "Log in"}
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 my-1">
             <hr className="flex-1 border-gray-300" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">or</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+              or
+            </span>
             <hr className="flex-1 border-gray-300" />
           </div>
 
-          {/* Continue with Google */}
           <button
             type="button"
             className="w-full flex items-center justify-center gap-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold py-2 rounded-lg cursor-pointer transition-all shadow-sm"
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z" />
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.7 36 24 36c-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.5 16.2 44 24 44z" />
-              <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.4 4.2-4.4 5.5l6.2 5.2C36.9 36.2 44 31 44 24c0-1.3-.1-2.6-.4-3.9z" />
+              <path
+                fill="#FFC107"
+                d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"
+              />
+              <path
+                fill="#FF3D00"
+                d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
+              />
+              <path
+                fill="#4CAF50"
+                d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.7 36 24 36c-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.5 16.2 44 24 44z"
+              />
+              <path
+                fill="#1976D2"
+                d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.4 4.2-4.4 5.5l6.2 5.2C36.9 36.2 44 31 44 24c0-1.3-.1-2.6-.4-3.9z"
+              />
             </svg>
             Continue with Google
           </button>
 
-          {/* Register link */}
           <p className="text-center text-sm text-gray-600">
             No account?{" "}
             <span

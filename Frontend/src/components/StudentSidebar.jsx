@@ -9,6 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import { clearAuthSession } from "../utils/auth";
 
 const navItems = [
   {
@@ -36,10 +37,7 @@ export default function StudentSidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
+    clearAuthSession();
     navigate("/");
   };
 

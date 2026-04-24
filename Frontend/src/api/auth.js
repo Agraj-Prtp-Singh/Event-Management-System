@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const BASE_URL = "http://localhost:5000/api/v1/auth";
+const unwrapResponse = (response) => response.data?.data ?? response.data;
 
 export const loginUser = async ({ email, password }) => {
   try {
@@ -13,7 +14,7 @@ export const loginUser = async ({ email, password }) => {
         },
       },
     );
-    return response.data;
+    return unwrapResponse(response);
   } catch (error) {
     throw new Error(
       error.response?.data?.message ||
@@ -31,7 +32,7 @@ export const registerUser = async (userData) => {
       },
     });
 
-    return response.data;
+    return unwrapResponse(response);
   } catch (error) {
     throw new Error(
       error.response?.data?.message ||
@@ -53,7 +54,7 @@ export const sendOtp = async (email) => {
       },
     );
 
-    return response.data;
+    return unwrapResponse(response);
   } catch (error) {
     throw new Error(
       error.response?.data?.message ||
@@ -75,7 +76,7 @@ export const verifyOtp = async ({ email, otp }) => {
       },
     );
 
-    return response.data;
+    return unwrapResponse(response);
   } catch (error) {
     throw new Error(
       error.response?.data?.message ||

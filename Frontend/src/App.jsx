@@ -11,15 +11,19 @@ import AdminSettings from "./pages/AdminSettings";
 import Footer from "./components/Footer";
 import Login from "./pages/LoginPage";
 import AskAI from "./components/AskAI";
-
 import StudentDashboard from "./pages/Studentdashboard";
 import BrowseStudentEvents from "./pages/BrowseStudentEvents";
 import StudentBookings from "./pages/StudentBookings";
 import StudentEventDetail from "./pages/StudentEventDetail";
-
 import VendorDashboard from "./pages/Plannerdashboard";
 import CreateEvent from "./pages/Createevent";
 import Attendees from "./pages/Attendees";
+import {
+  getHomeRouteForRole,
+  getStoredUser,
+  isAuthenticated,
+  normalizeRole,
+} from "./utils/auth";
 
 function AdminLayout({ children }) {
   return (
@@ -58,70 +62,176 @@ function StudentLayout({ children }) {
   );
 }
 
+function ProtectedRoute({ allowedRoles, children }) {
+  const authenticated = isAuthenticated();
+  const user = getStoredUser();
+  const role = normalizeRole(user?.role);
+
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles?.length && !allowedRoles.includes(role)) {
+    return <Navigate to={getHomeRouteForRole(role)} replace />;
+  }
+
+  return children;
+}
+
+function PublicOnlyRoute({ children }) {
+  const user = getStoredUser();
+
+  if (isAuthenticated()) {
+    return <Navigate to={getHomeRouteForRole(user?.role)} replace />;
+  }
+
+  return children;
+}
+
 function App() {
+  const fallbackRoute = getHomeRouteForRole(getStoredUser()?.role);
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/otp" element={<OTPPage />} />
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/register"
+        element={
+          <PublicOnlyRoute>
+            <Register />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/otp"
+        element={
+          <PublicOnlyRoute>
+            <OTPPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <Login />
+          </PublicOnlyRoute>
+        }
+      />
 
-      {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
-        element={<AdminLayout><AdminDashboardPage /></AdminLayout>}
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLayout>
+              <AdminDashboardPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/admin/events"
-        element={<AdminLayout><AdminEvents /></AdminLayout>}
-      />
-
-      {/* Student Routes */}
-      <Route
-        path="/student-dashboard"
-        element={<StudentLayout><StudentDashboard /></StudentLayout>}
-      />
-      <Route
-        path="/student/browse"
-        element={<StudentLayout><BrowseStudentEvents /></StudentLayout>}
-      />
-      <Route
-        path="/student/bookings"
-        element={<StudentLayout><StudentBookings /></StudentLayout>}
-      />
-      <Route
-        path="/student/event/:id"
-        element={<StudentLayout><StudentEventDetail /></StudentLayout>}
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLayout>
+              <AdminEvents />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/admin/settings"
         element={
-          <AdminLayout>
-            <AdminSettings />
-          </AdminLayout>
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
 
-      {/* Planner Routes - Standardized to /planner */}
+      <Route
+        path="/student-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentLayout>
+              <StudentDashboard />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/dashboard"
+        element={<Navigate to="/student-dashboard" replace />}
+      />
+      <Route
+        path="/student/browse"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentLayout>
+              <BrowseStudentEvents />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/bookings"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentLayout>
+              <StudentBookings />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/event/:id"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentLayout>
+              <StudentEventDetail />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/planner/dashboard"
-        element={<PlannerLayout><VendorDashboard /></PlannerLayout>}
+        element={
+          <ProtectedRoute allowedRoles={["admin", "vendor", "event_planner"]}>
+            <PlannerLayout>
+              <VendorDashboard />
+            </PlannerLayout>
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/planner/events"
-        element={<PlannerLayout><CreateEvent /></PlannerLayout>}
+        element={
+          <ProtectedRoute allowedRoles={["admin", "vendor", "event_planner"]}>
+            <PlannerLayout>
+              <CreateEvent />
+            </PlannerLayout>
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/planner/attendees"
-        element={<PlannerLayout><Attendees /></PlannerLayout>}
+        element={
+          <ProtectedRoute allowedRoles={["admin", "vendor", "event_planner"]}>
+            <PlannerLayout>
+              <Attendees />
+            </PlannerLayout>
+          </ProtectedRoute>
+        }
       />
 
-      {/* Redirects */}
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/student" element={<Navigate to="/student-dashboard" replace />} />
       <Route path="/vendor" element={<Navigate to="/planner/dashboard" replace />} />
+      <Route path="/organizer" element={<Navigate to="/planner/dashboard" replace />} />
       <Route path="/planner" element={<Navigate to="/planner/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
     </Routes>
   );
 }
