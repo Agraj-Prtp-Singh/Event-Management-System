@@ -108,6 +108,7 @@ export default function RegisterCard() {
               placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="input"
               required
             />
           </div>
