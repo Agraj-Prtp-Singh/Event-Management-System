@@ -12,39 +12,11 @@ import {
 } from "lucide-react";
 import { getStudentStats, getStudentBookings } from "../api/student";
 
-// ─── Fallback data ────────────────────────────────────────────────────────────
-const FALLBACK_STATS = {
-  eventsAttended: 12,
-  upcomingEvents: 3,
-  totalBookings: 15,
+const EMPTY_STATS = {
+  eventsAttended: 0,
+  upcomingEvents: 0,
+  totalBookings: 0,
 };
-
-const FALLBACK_BOOKINGS = [
-  {
-    id: 1,
-    title: "Tech Summit 2026",
-    date: "Apr 12, 2026",
-    time: "10:00 AM",
-    location: "Main Hall, Block A",
-    status: "Confirmed",
-  },
-  {
-    id: 2,
-    title: "Campus Music Fest",
-    date: "Apr 18, 2026",
-    time: "6:00 PM",
-    location: "Outdoor Stage",
-    status: "Confirmed",
-  },
-  {
-    id: 3,
-    title: "AI & Future Workshop",
-    date: "Apr 25, 2026",
-    time: "2:00 PM",
-    location: "Lab 3B",
-    status: "Pending",
-  },
-];
 
 const quickActions = [
   {
@@ -56,12 +28,37 @@ const quickActions = [
   {
     label: "My Bookings",
     icon: Ticket,
-    desc: "View your tickets & QR codes",
+    desc: "View your tickets and QR codes",
     path: "/student/bookings",
   },
 ];
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+function normalizeBooking(registration) {
+  const event = registration.eventId || registration.event || {};
+  const startDate = event.startDate ? new Date(event.startDate) : null;
+
+  return {
+    id: registration._id || registration.id,
+    eventId: event._id || event.id,
+    title: event.title || "Untitled Event",
+    date: startDate
+      ? startDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "Date not set",
+    time: startDate
+      ? startDate.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Time not set",
+    location: event.location || "Location not set",
+    status: registration.status === "cancelled" ? "Cancelled" : "Confirmed",
+  };
+}
+
 function StatCard({ label, value, icon: Icon, loading }) {
   return (
     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 md:gap-4 rounded-[1.5rem] bg-[#F4F7FB] px-3 md:px-5 py-4 border border-black/5">
@@ -80,7 +77,6 @@ function StatCard({ label, value, icon: Icon, loading }) {
   );
 }
 
-// ─── Booking Row ──────────────────────────────────────────────────────────────
 function BookingRow({ event }) {
   const parts = event.date.split(" ");
   const month = parts[0];
@@ -109,6 +105,8 @@ function BookingRow({ event }) {
         className={`text-xs font-semibold px-2.5 md:px-3 py-1 rounded-full shrink-0 ${
           event.status === "Confirmed"
             ? "bg-green-100 text-green-700"
+            : event.status === "Cancelled"
+            ? "bg-red-100 text-red-500"
             : "bg-yellow-100 text-yellow-700"
         }`}
       >
@@ -118,33 +116,37 @@ function BookingRow({ event }) {
   );
 }
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
 export default function StudentDashboardCard() {
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState(FALLBACK_STATS);
-  const [bookings, setBookings] = useState(FALLBACK_BOOKINGS);
+  const [stats, setStats] = useState(EMPTY_STATS);
+  const [bookings, setBookings] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     getStudentStats()
       .then((data) => {
         setStats({
-          eventsAttended: data.eventsAttended ?? FALLBACK_STATS.eventsAttended,
-          upcomingEvents: data.upcomingEvents ?? FALLBACK_STATS.upcomingEvents,
-          totalBookings: data.totalBookings ?? FALLBACK_STATS.totalBookings,
+          eventsAttended: data.eventsAttended ?? 0,
+          upcomingEvents: data.upcomingEvents ?? 0,
+          totalBookings: data.totalBookings ?? 0,
         });
       })
-      .catch(() => {})
+      .catch((err) => {
+        setError(err.message || "Failed to load student stats.");
+      })
       .finally(() => setLoadingStats(false));
 
     getStudentBookings()
       .then((data) => {
-        const list = Array.isArray(data) ? data : data?.bookings;
-        if (list && list.length > 0) setBookings(list);
+        const list = Array.isArray(data) ? data : [];
+        setBookings(list.map(normalizeBooking).slice(0, 3));
       })
-      .catch(() => {})
+      .catch((err) => {
+        setError((current) => current || err.message || "Failed to load bookings.");
+      })
       .finally(() => setLoadingBookings(false));
   }, []);
 
@@ -156,8 +158,12 @@ export default function StudentDashboardCard() {
 
   return (
     <div className="flex min-h-full flex-col gap-6">
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
-      {/* Quick Actions */}
       <section className="flex flex-col gap-3 rounded-[2rem] bg-white px-5 py-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:flex-row md:items-end md:justify-between md:px-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -190,7 +196,6 @@ export default function StudentDashboardCard() {
         </div>
       </section>
 
-      {/* Stats */}
       <section className="rounded-[2rem] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-5">
           <div>
@@ -218,7 +223,6 @@ export default function StudentDashboardCard() {
         </div>
       </section>
 
-      {/* Upcoming Bookings */}
       <section className="rounded-[2rem] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-5">
           <div>
@@ -234,7 +238,7 @@ export default function StudentDashboardCard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-              {bookings.length} bookings
+              {loadingBookings ? "Loading..." : `${bookings.length} bookings`}
             </span>
             <button
               onClick={() => navigate("/student/bookings")}
@@ -248,7 +252,11 @@ export default function StudentDashboardCard() {
         {loadingBookings ? (
           <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
             <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Loading bookings…</span>
+            <span className="text-sm">Loading bookings...</span>
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-12 text-center text-sm text-slate-400">
+            No bookings found in the database yet.
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -258,7 +266,6 @@ export default function StudentDashboardCard() {
           </div>
         )}
       </section>
-
     </div>
   );
 }

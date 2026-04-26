@@ -25,7 +25,7 @@ class RegistrationService {
   async registerForEvent(eventId, userId) {
     const event = await eventRepository.findById(eventId);
 
-    if (!event || !event.isPublished) {
+    if (!event) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
 
@@ -34,7 +34,7 @@ class RegistrationService {
     }
 
     const existing = await registrationRepository.findOne({ eventId, userId });
-    if (existing && existing.status === 'registered') {
+    if (existing && (!existing.status || existing.status === 'registered')) {
       throw new AppError('You are already registered for this event', HTTP_STATUS.CONFLICT);
     }
 

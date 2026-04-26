@@ -2,6 +2,21 @@ import axios from "axios";
 
 const BASE_URL = "http://localhost:5000/api/v1/auth";
 const unwrapResponse = (response) => response.data?.data ?? response.data;
+const getApiErrorMessage = (error, fallbackMessage) => {
+  if (error.response) {
+    return (
+      error.response.data?.message ||
+      error.response.data?.error ||
+      fallbackMessage
+    );
+  }
+
+  if (error.request) {
+    return "Backend server is not reachable on http://localhost:5000.";
+  }
+
+  return fallbackMessage;
+};
 
 export const loginUser = async ({ email, password }) => {
   try {
@@ -16,11 +31,7 @@ export const loginUser = async ({ email, password }) => {
     );
     return unwrapResponse(response);
   } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Login failed",
-    );
+    throw new Error(getApiErrorMessage(error, "Login failed"));
   }
 };
 
@@ -34,11 +45,7 @@ export const registerUser = async (userData) => {
 
     return unwrapResponse(response);
   } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Registration failed",
-    );
+    throw new Error(getApiErrorMessage(error, "Registration failed"));
   }
 };
 
@@ -56,11 +63,7 @@ export const sendOtp = async (email) => {
 
     return unwrapResponse(response);
   } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Failed to send OTP",
-    );
+    throw new Error(getApiErrorMessage(error, "Failed to send OTP"));
   }
 };
 
@@ -78,10 +81,6 @@ export const verifyOtp = async ({ email, otp }) => {
 
     return unwrapResponse(response);
   } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.response?.data?.error ||
-        "OTP verification failed",
-    );
+    throw new Error(getApiErrorMessage(error, "OTP verification failed"));
   }
 };

@@ -7,16 +7,12 @@ function StatCard({ label, value }) {
   );
 }
 
-export default function AdminEventsStats({
-  totalEvents,
-  approvedEvents,
-  rejectedEvents,
-}) {
+export default function AdminEventsStats({ cards }) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <StatCard label="Total Events" value={totalEvents} />
-      <StatCard label="Approved Events" value={approvedEvents} />
-      <StatCard label="Rejected Events" value={rejectedEvents} />
+      {cards.map((card) => (
+        <StatCard key={card.label} label={card.label} value={card.value} />
+      ))}
     </div>
   );
 }

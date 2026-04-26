@@ -39,10 +39,10 @@ const HTTP_STATUS = require('../constants/httpStatus');
 const { ROLES } = require('../constants/roles');
 
 class EventService {
-  async createEvent(payload, userId) {
+  async createEvent(payload, user) {
     const event = await eventRepository.create({
       ...payload,
-      createdBy: userId
+      createdBy: user.id || user
     });
 
     return event;
@@ -50,7 +50,7 @@ class EventService {
 
   async listEvents(query) {
     const pagination = sanitizePagination(query);
-    const filter = { isPublished: true };
+    const filter = {};
 
     if (query.search && query.search.trim()) {
       filter.$text = { $search: query.search.trim() };
@@ -140,7 +140,7 @@ class EventService {
   async getEventById(eventId) {
     const event = await eventRepository.findByIdWithCreator(eventId);
 
-    if (!event || !event.isPublished) {
+    if (!event) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
 

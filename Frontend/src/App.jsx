@@ -19,6 +19,7 @@ import VendorDashboard from "./pages/Plannerdashboard";
 import CreateEvent from "./pages/Createevent";
 import Attendees from "./pages/Attendees";
 import {
+  clearAuthSession,
   getHomeRouteForRole,
   getStoredUser,
   isAuthenticated,
@@ -80,9 +81,15 @@ function ProtectedRoute({ allowedRoles, children }) {
 
 function PublicOnlyRoute({ children }) {
   const user = getStoredUser();
+  const role = normalizeRole(user?.role);
 
-  if (isAuthenticated()) {
-    return <Navigate to={getHomeRouteForRole(user?.role)} replace />;
+  if (isAuthenticated() && role) {
+    return <Navigate to={getHomeRouteForRole(role)} replace />;
+  }
+
+  // Recover from stale storage like a leftover token without a valid user.
+  if (isAuthenticated() && !role) {
+    clearAuthSession();
   }
 
   return children;

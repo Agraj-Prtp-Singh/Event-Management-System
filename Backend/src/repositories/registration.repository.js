@@ -8,6 +8,13 @@ exports.cancel = (eventId, userId) =>
 exports.findByUser = (userId) =>
   Registration.find({ userId }).populate('eventId');
 class RegistrationRepository {
+  #registeredFilter(extra = {}) {
+    return {
+      ...extra,
+      $or: [{ status: 'registered' }, { status: { $exists: false } }]
+    };
+  }
+
   create(data) {
     return Registration.create(data);
   }
@@ -17,28 +24,28 @@ class RegistrationRepository {
   }
 
   countByEvent(eventId) {
-    return Registration.countDocuments({ eventId, status: 'registered' });
+    return Registration.countDocuments(this.#registeredFilter({ eventId }));
   }
 
   countByUser(userId) {
-    return Registration.countDocuments({ userId, status: 'registered' });
+    return Registration.countDocuments(this.#registeredFilter({ userId }));
   }
 
   listByUser(userId) {
-    return Registration.find({ userId, status: 'registered' })
+    return Registration.find(this.#registeredFilter({ userId }))
       .sort({ createdAt: -1 })
       .populate('eventId');
   }
 
   listByEvent(eventId) {
-    return Registration.find({ eventId, status: 'registered' })
+    return Registration.find(this.#registeredFilter({ eventId }))
       .sort({ createdAt: -1 })
       .populate('userId', 'fullName phone email role');
   }
 
   cancel(userId, eventId) {
     return Registration.findOneAndUpdate(
-      { userId, eventId, status: 'registered' },
+      this.#registeredFilter({ userId, eventId }),
       { status: 'cancelled' },
       { new: true }
     );
@@ -46,18 +53,20 @@ class RegistrationRepository {
 
   cancelById(registrationId, userId) {
     return Registration.findOneAndUpdate(
-      { _id: registrationId, userId, status: 'registered' },
+      this.#registeredFilter({ _id: registrationId, userId }),
       { status: 'cancelled' },
       { new: true }
     );
   }
 
   countByEventIds(eventIds) {
-    return Registration.countDocuments({ eventId: { $in: eventIds }, status: 'registered' });
+    return Registration.countDocuments(
+      this.#registeredFilter({ eventId: { $in: eventIds } })
+    );
   }
 
   listByEventIds(eventIds) {
-    return Registration.find({ eventId: { $in: eventIds }, status: 'registered' })
+    return Registration.find(this.#registeredFilter({ eventId: { $in: eventIds } }))
       .sort({ createdAt: -1 })
       .populate('eventId')
       .populate('userId', 'fullName phone email role');

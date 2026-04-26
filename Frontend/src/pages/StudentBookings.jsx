@@ -10,50 +10,26 @@ import {
 } from "lucide-react";
 import { getStudentBookings, cancelBooking } from "../api/student";
 
-const FALLBACK_BOOKINGS = [
-  {
-    id: "BK-2026-001",
-    title: "Tech Innovation Summit",
-    month: "Mar",
-    day: "28",
-    time: "10:00 AM",
-    location: "Main Hall, Block A",
-    status: "Confirmed",
-  },
-  {
-    id: "BK-2026-002",
-    title: "Campus Music Fest",
-    month: "Apr",
-    day: "18",
-    time: "6:00 PM",
-    location: "Outdoor Stage",
-    status: "Confirmed",
-  },
-  {
-    id: "BK-2026-003",
-    title: "AI & Future Workshop",
-    month: "Apr",
-    day: "25",
-    time: "2:00 PM",
-    location: "Lab 3B",
-    status: "Pending",
-  },
-];
+function normalizeBooking(registration) {
+  const event = registration.eventId || registration.event || {};
+  const startDate = event.startDate ? new Date(event.startDate) : null;
 
-// Normalize booking from backend shape
-function normalizeBooking(b) {
-  const date = b.eventDate || b.startDate || b.date;
-  const d = date ? new Date(date) : null;
   return {
-    id: b._id || b.id || b.bookingId,
-    title: b.eventTitle || b.title || b.event?.title || "Event",
-    month: d
-      ? d.toLocaleString("en-US", { month: "short" })
-      : b.month || "—",
-    day: d ? String(d.getDate()) : b.day || "—",
-    time: b.time || (d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"),
-    location: b.location || b.event?.location || "—",
-    status: b.status || "Pending",
+    id: registration._id || registration.id,
+    eventId: event._id || event.id,
+    title: event.title || "Untitled Event",
+    month: startDate
+      ? startDate.toLocaleString("en-US", { month: "short" })
+      : "--",
+    day: startDate ? String(startDate.getDate()) : "--",
+    time: startDate
+      ? startDate.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Time not set",
+    location: event.location || "Location not set",
+    status: registration.status === "cancelled" ? "Cancelled" : "Confirmed",
   };
 }
 
@@ -61,36 +37,36 @@ export default function MyBookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [usingFallback, setUsingFallback] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     getStudentBookings()
       .then((data) => {
-        const list = Array.isArray(data) ? data : data?.bookings ?? [];
-        if (list.length > 0) {
-          setBookings(list.map(normalizeBooking));
-        } else {
-          setBookings(FALLBACK_BOOKINGS);
-          setUsingFallback(true);
-        }
+        const list = Array.isArray(data) ? data : [];
+        setBookings(list.map(normalizeBooking));
       })
-      .catch(() => {
-        setBookings(FALLBACK_BOOKINGS);
-        setUsingFallback(true);
+      .catch((err) => {
+        setError(err.message || "Failed to load bookings.");
       })
       .finally(() => setLoading(false));
   }, []);
 
   const handleCancel = async (bookingId) => {
-    if (!window.confirm("Cancel this booking?")) return;
+    if (!window.confirm("Cancel this booking?")) {
+      return;
+    }
+
     setCancelingId(bookingId);
+    setError("");
+
     try {
       await cancelBooking(bookingId);
       setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "Cancelled" } : b
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "Cancelled" }
+            : booking
         )
       );
     } catch (err) {
@@ -103,8 +79,6 @@ export default function MyBookings() {
   return (
     <div className="flex flex-col items-center px-4 md:px-8 py-8 bg-[#F8FAFC]">
       <div className="w-full max-w-3xl space-y-6">
-
-        {/* Page Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">My Bookings</h2>
           {!loading && (
@@ -114,23 +88,16 @@ export default function MyBookings() {
           )}
         </div>
 
-        {usingFallback && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-4 py-2.5">
-            Showing sample bookings — connect to the backend to see your real bookings.
-          </div>
-        )}
-
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
             {error}
           </div>
         )}
 
-        {/* Loading State */}
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-400 gap-2">
             <Loader2 size={24} className="animate-spin" />
-            <span className="text-sm">Loading bookings…</span>
+            <span className="text-sm">Loading bookings...</span>
           </div>
         ) : bookings.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
@@ -143,7 +110,6 @@ export default function MyBookings() {
             </button>
           </div>
         ) : (
-          /* Booking Cards */
           <div className="space-y-4">
             {bookings.map((booking) => (
               <div
@@ -152,7 +118,6 @@ export default function MyBookings() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                    {/* Date block */}
                     <div className="bg-[#0b0220] text-white rounded-xl px-2.5 md:px-3 py-2 text-center shrink-0 min-w-[46px] md:min-w-[52px]">
                       <p className="text-[9px] md:text-[10px] font-medium opacity-60 uppercase">
                         {booking.month}
@@ -162,7 +127,6 @@ export default function MyBookings() {
                       </p>
                     </div>
 
-                    {/* Info */}
                     <div className="min-w-0">
                       <p className="font-bold text-gray-900 text-sm md:text-base truncate">
                         {booking.title}
@@ -179,7 +143,6 @@ export default function MyBookings() {
                     </div>
                   </div>
 
-                  {/* Right side Actions */}
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span
                       className={`text-[10px] md:text-xs font-semibold px-2.5 md:px-3 py-1 rounded-full ${
@@ -193,9 +156,9 @@ export default function MyBookings() {
                       {booking.status}
                     </span>
 
-                    {booking.status === "Confirmed" && (
+                    {booking.status === "Confirmed" && booking.eventId && (
                       <button
-                        onClick={() => navigate(`/student/event/${booking.id}`)}
+                        onClick={() => navigate(`/student/event/${booking.eventId}`)}
                         className="flex items-center gap-1.5 text-blue-500 text-xs font-medium hover:underline cursor-pointer"
                       >
                         <QrCode size={12} />
@@ -203,7 +166,7 @@ export default function MyBookings() {
                       </button>
                     )}
 
-                    {booking.status !== "Cancelled" && !usingFallback && (
+                    {booking.status === "Confirmed" && (
                       <button
                         onClick={() => handleCancel(booking.id)}
                         disabled={cancelingId === booking.id}
@@ -224,7 +187,6 @@ export default function MyBookings() {
           </div>
         )}
 
-        {/* Browse more CTA */}
         <div className="pt-4">
           <button
             onClick={() => navigate("/student/browse")}
