@@ -8,10 +8,12 @@ const { ROLES } = require('../constants/roles');
 const router = express.Router();
 
 router.get('/', eventController.listEvents);
+router.get('/pending', authMiddleware, authorize(ROLES.ADMIN), eventController.listPendingEvents);
 router.get('/:id', validateObjectId('id'), eventController.getEventById);
 
 router.post('/', authMiddleware, authorize(ROLES.EVENT_PLANNER, ROLES.ADMIN), eventController.createEvent);
 router.patch('/:id', authMiddleware, validateObjectId('id'), eventController.updateEvent);
+router.patch('/:id/review', authMiddleware, authorize(ROLES.ADMIN), validateObjectId('id'), eventController.reviewEvent);
 router.delete('/:id', authMiddleware, validateObjectId('id'), eventController.deleteEvent);
 
 router.post('/:id/register', authMiddleware, validateObjectId('id'), registrationController.registerForEvent);

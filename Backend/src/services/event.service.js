@@ -4,12 +4,20 @@ const sanitizePagination = require('../utils/pagination');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
 const { ROLES } = require('../constants/roles');
+const { EVENT_APPROVAL_STATUS } = require('../models/event.model');
 
 class EventService {
-  async createEvent(payload, userId) {
+  async createEvent(payload, user) {
+    const isAdmin = user.role === ROLES.ADMIN;
+
     const event = await eventRepository.create({
       ...payload,
-      createdBy: userId
+      createdBy: user.id,
+      isPublished: isAdmin,
+      approvalStatus: isAdmin ? EVENT_APPROVAL_STATUS.APPROVED : EVENT_APPROVAL_STATUS.PENDING,
+      reviewedBy: isAdmin ? user.id : null,
+      reviewedAt: isAdmin ? new Date() : null,
+      denialReason: null
     });
 
     return event;
@@ -69,7 +77,22 @@ class EventService {
       throw new AppError('Only owner or admin can update this event', HTTP_STATUS.FORBIDDEN);
     }
 
-    const updated = await eventRepository.updateById(eventId, payload);
+    const sanitizedPayload = { ...payload };
+    delete sanitizedPayload.isPublished;
+    delete sanitizedPayload.approvalStatus;
+    delete sanitizedPayload.reviewedBy;
+    delete sanitizedPayload.reviewedAt;
+    delete sanitizedPayload.denialReason;
+
+    if (!isAdmin) {
+      sanitizedPayload.isPublished = false;
+      sanitizedPayload.approvalStatus = EVENT_APPROVAL_STATUS.PENDING;
+      sanitizedPayload.reviewedBy = null;
+      sanitizedPayload.reviewedAt = null;
+      sanitizedPayload.denialReason = null;
+    }
+
+    const updated = await eventRepository.updateById(eventId, sanitizedPayload);
     return updated;
   }
 
@@ -106,6 +129,50 @@ class EventService {
     }
 
     return registrationRepository.listByEvent(eventId);
+  }
+
+  async listPendingEvents(query) {
+    const pagination = sanitizePagination(query);
+    const filter = { approvalStatus: EVENT_APPROVAL_STATUS.PENDING };
+
+    const [items, total] = await Promise.all([
+      eventRepository.list(filter, pagination),
+      eventRepository.count(filter)
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total,
+        totalPages: Math.ceil(total / pagination.limit)
+      }
+    };
+  }
+
+  async reviewEvent(eventId, decision, adminUserId, denialReason) {
+    const event = await eventRepository.findById(eventId);
+
+    if (!event) {
+      throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const normalizedDecision = String(decision || '').trim().toLowerCase();
+
+    if (normalizedDecision !== EVENT_APPROVAL_STATUS.APPROVED && normalizedDecision !== EVENT_APPROVAL_STATUS.DENIED) {
+      throw new AppError("decision must be either 'approved' or 'denied'", HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const update = {
+      approvalStatus: normalizedDecision,
+      isPublished: normalizedDecision === EVENT_APPROVAL_STATUS.APPROVED,
+      reviewedBy: adminUserId,
+      reviewedAt: new Date(),
+      denialReason: normalizedDecision === EVENT_APPROVAL_STATUS.DENIED ? denialReason || null : null
+    };
+
+    return eventRepository.updateById(eventId, update);
   }
 }
 

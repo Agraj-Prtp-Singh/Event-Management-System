@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const EVENT_APPROVAL_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  DENIED: 'denied'
+};
+
 const eventSchema = new mongoose.Schema(
   {
     title: {
@@ -47,6 +53,27 @@ const eventSchema = new mongoose.Schema(
     isPublished: {
       type: Boolean,
       default: true
+    },
+    approvalStatus: {
+      type: String,
+      enum: Object.values(EVENT_APPROVAL_STATUS),
+      default: EVENT_APPROVAL_STATUS.PENDING,
+      index: true
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    reviewedAt: {
+      type: Date,
+      default: null
+    },
+    denialReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: null
     }
   },
   { timestamps: true }
@@ -54,4 +81,7 @@ const eventSchema = new mongoose.Schema(
 
 eventSchema.index({ title: 'text', location: 'text', description: 'text' });
 
-module.exports = mongoose.model('Event', eventSchema);
+const Event = mongoose.model('Event', eventSchema);
+
+module.exports = Event;
+module.exports.EVENT_APPROVAL_STATUS = EVENT_APPROVAL_STATUS;

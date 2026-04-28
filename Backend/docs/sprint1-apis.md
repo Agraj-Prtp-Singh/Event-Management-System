@@ -84,6 +84,9 @@ Body:
 }
 ```
 Response: `201 Created`
+Approval behavior:
+- If created by `event_planner`: event is created as `pending` and `isPublished=false` (not visible in public listing until admin approval).
+- If created by `admin`: event is auto-approved and published (`approvalStatus=approved`, `isPublished=true`).
 
 ### GET `/events`
 Purpose: List published events.
@@ -101,6 +104,9 @@ Purpose: Update event.
 Auth: Bearer token required (owner or admin)
 Body: Any event fields to update
 Response: `200 OK`
+Approval behavior:
+- If updated by non-admin owner: event is moved back to `pending` and unpublished until re-approved by admin.
+- Admin updates keep review control.
 
 ### DELETE `/events/:id`
 Purpose: Delete event.
@@ -112,11 +118,39 @@ Purpose: List registrations of one event.
 Auth: Bearer token required (owner or admin)
 Response: `200 OK`
 
+### GET `/events/pending`
+Purpose: List events waiting for moderation.
+Auth: Bearer token required (`admin`)
+Query (optional): `page`, `limit`
+Response: `200 OK` with items + pagination.
+
+### PATCH `/events/:id/review`
+Purpose: Approve or deny a pending event.
+Auth: Bearer token required (`admin`)
+Body:
+```json
+{
+  "decision": "approved"
+}
+```
+or
+```json
+{
+  "decision": "denied",
+  "denialReason": "Please update venue details and timing."
+}
+```
+Response: `200 OK`
+Notes:
+- `decision` must be `approved` or `denied`.
+- `denialReason` is required when decision is `denied`.
+
 ## 4) Registration APIs
 ### POST `/events/:id/register`
 Purpose: Register logged-in user to an event.
 Auth: Bearer token required
 Response: `201 Created`
+Only published (approved) events can be registered.
 
 ### DELETE `/events/:id/register`
 Purpose: Cancel logged-in user's registration.

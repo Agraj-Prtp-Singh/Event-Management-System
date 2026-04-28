@@ -1,11 +1,11 @@
 const eventService = require('../services/event.service');
-const { validateEventPayload } = require('../validators/event.validator');
+const { validateEventPayload, validateReviewPayload } = require('../validators/event.validator');
 const asyncHandler = require('../utils/asyncHandler');
 const HTTP_STATUS = require('../constants/httpStatus');
 
 const createEvent = asyncHandler(async (req, res) => {
   validateEventPayload(req.body);
-  const event = await eventService.createEvent(req.body, req.user.id);
+  const event = await eventService.createEvent(req.body, req.user);
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
@@ -61,11 +61,39 @@ const listEventRegistrations = asyncHandler(async (req, res) => {
   });
 });
 
+const listPendingEvents = asyncHandler(async (req, res) => {
+  const data = await eventService.listPendingEvents(req.query);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Pending events fetched successfully',
+    data
+  });
+});
+
+const reviewEvent = asyncHandler(async (req, res) => {
+  validateReviewPayload(req.body);
+  const event = await eventService.reviewEvent(
+    req.params.id,
+    req.body.decision,
+    req.user.id,
+    req.body.denialReason
+  );
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: `Event ${req.body.decision.toLowerCase()} successfully`,
+    data: event
+  });
+});
+
 module.exports = {
   createEvent,
   listEvents,
   getEventById,
   updateEvent,
   deleteEvent,
-  listEventRegistrations
+  listEventRegistrations,
+  listPendingEvents,
+  reviewEvent
 };
