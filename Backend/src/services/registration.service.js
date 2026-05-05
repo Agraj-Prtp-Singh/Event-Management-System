@@ -1,24 +1,6 @@
-const repo = require('../repositories/registration.repository');
-const eventRepo = require('../repositories/event.repository');
+const registrationRepository = require('../repositories/registration.repository');
+const eventRepository = require('../repositories/event.repository');
 const AppError = require('../utils/appError');
-
-exports.register = async (eventId, user) => {
-  const event = await eventRepo.findById(eventId);
-  if (!event) throw new AppError('Event not found', 404);
-
-  return await repo.create({
-    eventId,
-    userId: user.id
-  });
-};
-
-exports.cancel = async (eventId, user) => {
-  return await repo.cancel(eventId, user.id);
-};
-
-exports.getMyRegistrations = async (userId) => {
-  return await repo.findByUser(userId);
-};
 const HTTP_STATUS = require('../constants/httpStatus');
 
 class RegistrationService {
@@ -27,6 +9,10 @@ class RegistrationService {
 
     if (!event) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (!event.isPublished) {
+      throw new AppError('Event is not available for registration', HTTP_STATUS.NOT_FOUND);
     }
 
     if (new Date(event.endDate) < new Date()) {
@@ -73,8 +59,7 @@ class RegistrationService {
   }
 
   async listMyRegistrations(userId) {
-    const registrations = await registrationRepository.listByUser(userId);
-    return registrations;
+    return registrationRepository.listByUser(userId);
   }
 
   async getStudentStats(userId) {

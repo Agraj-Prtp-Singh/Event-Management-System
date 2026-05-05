@@ -5,6 +5,7 @@ import LandingPage from "./pages/LandingPage";
 import AdminSidebar from "./components/AdminSidebar";
 import StudentSidebar from "./components/StudentSidebar";
 import PlannerSidebar from "./components/PlannerSidebar";
+import VendorSidebar from "./components/VendorSidebar";
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminEvents from "./pages/AdminEvents";
 import AdminSettings from "./pages/AdminSettings";
@@ -15,9 +16,12 @@ import StudentDashboard from "./pages/Studentdashboard";
 import BrowseStudentEvents from "./pages/BrowseStudentEvents";
 import StudentBookings from "./pages/StudentBookings";
 import StudentEventDetail from "./pages/StudentEventDetail";
-import VendorDashboard from "./pages/Plannerdashboard";
+import PlannerDashboard from "./pages/Plannerdashboard";
 import CreateEvent from "./pages/Createevent";
 import Attendees from "./pages/Attendees";
+import VendorDashboard from "./pages/VendorDashboard";
+import VendorApplyEvents from "./pages/VendorApplyEvents";
+import VendorSettings from "./pages/VendorSettings";
 import {
   clearAuthSession,
   getHomeRouteForRole,
@@ -63,6 +67,18 @@ function StudentLayout({ children }) {
   );
 }
 
+function VendorLayout({ children }) {
+  return (
+    <div className="flex min-h-screen bg-[#F8FAFC] text-black">
+      <VendorSidebar />
+      <div className="flex min-h-screen flex-1 flex-col">
+        <main className="flex-1 overflow-y-auto">{children}</main>
+        <Footer />
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({ allowedRoles, children }) {
   const authenticated = isAuthenticated();
   const user = getStoredUser();
@@ -87,7 +103,6 @@ function PublicOnlyRoute({ children }) {
     return <Navigate to={getHomeRouteForRole(role)} replace />;
   }
 
-  // Recover from stale storage like a leftover token without a valid user.
   if (isAuthenticated() && !role) {
     clearAuthSession();
   }
@@ -207,7 +222,7 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["admin", "vendor", "event_planner"]}>
             <PlannerLayout>
-              <VendorDashboard />
+              <PlannerDashboard />
             </PlannerLayout>
           </ProtectedRoute>
         }
@@ -235,7 +250,37 @@ function App() {
 
       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/student" element={<Navigate to="/student-dashboard" replace />} />
-      <Route path="/vendor" element={<Navigate to="/planner/dashboard" replace />} />
+      <Route
+        path="/vendor/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["vendor", "admin"]}>
+            <VendorLayout>
+              <VendorDashboard />
+            </VendorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vendor/apply-events"
+        element={
+          <ProtectedRoute allowedRoles={["vendor", "admin"]}>
+            <VendorLayout>
+              <VendorApplyEvents />
+            </VendorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vendor/settings"
+        element={
+          <ProtectedRoute allowedRoles={["vendor", "admin"]}>
+            <VendorLayout>
+              <VendorSettings />
+            </VendorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
       <Route path="/organizer" element={<Navigate to="/planner/dashboard" replace />} />
       <Route path="/planner" element={<Navigate to="/planner/dashboard" replace />} />
       <Route path="*" element={<Navigate to={fallbackRoute} replace />} />

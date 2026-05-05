@@ -51,6 +51,8 @@ function ActionButton({
     primary: "bg-[#4E7BFF] text-white hover:bg-[#3E68E5]",
     neutral:
       "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+    success: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    warning: "bg-amber-50 text-amber-700 hover:bg-amber-100",
     danger: "bg-red-50 text-red-600 hover:bg-red-100",
   };
 
@@ -77,6 +79,8 @@ export default function AdminEventEditCard({
   onFieldChange,
   onSave,
   onDelete,
+  onApprove,
+  onReject,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -101,10 +105,6 @@ export default function AdminEventEditCard({
               </label>
 
               <FieldInput
-                label="Date"
-                type="date"
-                value={editForm.date}
-                onChange={(value) => onFieldChange("date", value)}
                 label="Start Date"
                 type="datetime-local"
                 value={editForm.startDate}

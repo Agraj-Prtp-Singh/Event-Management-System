@@ -1,48 +1,23 @@
-const eventRepo = require('../repositories/event.repository');
+const eventRepository = require('../repositories/event.repository');
+const registrationRepository = require('../repositories/registration.repository');
+const sanitizePagination = require('../utils/pagination');
 const AppError = require('../utils/appError');
-
-exports.createEvent = async (data, user) => {
-  data.createdBy = user.id;
-  return await eventRepo.create(data);
-};
-
-exports.updateEvent = async (eventId, data, user) => {
-  const event = await eventRepo.findById(eventId);
-  if (!event) throw new AppError('Event not found', 404);
-
-  if (event.createdBy.toString() !== user.id) {
-    throw new AppError('Unauthorized', 403);
-  }
-
-  return await eventRepo.update(eventId, data);
-};
-
-exports.deleteEvent = async (eventId, user) => {
-  const event = await eventRepo.findById(eventId);
-  if (!event) throw new AppError('Event not found', 404);
-
-  if (event.createdBy.toString() !== user.id) {
-    throw new AppError('Unauthorized', 403);
-  }
-
-  return await eventRepo.delete(eventId);
-};
-
-exports.getEventById = async (id) => {
-  return await eventRepo.findById(id);
-};
-
-exports.listEvents = async (query) => {
-  return await eventRepo.findAll(query);
-};
 const HTTP_STATUS = require('../constants/httpStatus');
 const { ROLES } = require('../constants/roles');
+const { EVENT_APPROVAL_STATUS } = require('../models/event.model');
 
 class EventService {
   async createEvent(payload, user) {
+    const isAdmin = user.role === ROLES.ADMIN;
+
     const event = await eventRepository.create({
       ...payload,
-      createdBy: user.id || user
+      createdBy: user.id,
+      isPublished: isAdmin,
+      approvalStatus: isAdmin ? EVENT_APPROVAL_STATUS.APPROVED : EVENT_APPROVAL_STATUS.PENDING,
+      reviewedBy: isAdmin ? user.id : null,
+      reviewedAt: isAdmin ? new Date() : null,
+      denialReason: null
     });
 
     return event;
@@ -50,7 +25,7 @@ class EventService {
 
   async listEvents(query) {
     const pagination = sanitizePagination(query);
-    const filter = {};
+    const filter = { isPublished: true };
 
     if (query.search && query.search.trim()) {
       filter.$text = { $search: query.search.trim() };
@@ -140,7 +115,7 @@ class EventService {
   async getEventById(eventId) {
     const event = await eventRepository.findByIdWithCreator(eventId);
 
-    if (!event) {
+    if (!event || !event.isPublished) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
 
@@ -161,8 +136,22 @@ class EventService {
       throw new AppError('Only owner or admin can update this event', HTTP_STATUS.FORBIDDEN);
     }
 
-    const updated = await eventRepository.updateById(eventId, payload);
-    return updated;
+    const sanitizedPayload = { ...payload };
+    delete sanitizedPayload.isPublished;
+    delete sanitizedPayload.approvalStatus;
+    delete sanitizedPayload.reviewedBy;
+    delete sanitizedPayload.reviewedAt;
+    delete sanitizedPayload.denialReason;
+
+    if (!isAdmin) {
+      sanitizedPayload.isPublished = false;
+      sanitizedPayload.approvalStatus = EVENT_APPROVAL_STATUS.PENDING;
+      sanitizedPayload.reviewedBy = null;
+      sanitizedPayload.reviewedAt = null;
+      sanitizedPayload.denialReason = null;
+    }
+
+    return eventRepository.updateById(eventId, sanitizedPayload);
   }
 
   async deleteEvent(eventId, user) {
@@ -198,6 +187,50 @@ class EventService {
     }
 
     return registrationRepository.listByEvent(eventId);
+  }
+
+  async listPendingEvents(query) {
+    const pagination = sanitizePagination(query);
+    const filter = { approvalStatus: EVENT_APPROVAL_STATUS.PENDING };
+
+    const [items, total] = await Promise.all([
+      eventRepository.list(filter, pagination),
+      eventRepository.count(filter)
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total,
+        totalPages: Math.ceil(total / pagination.limit)
+      }
+    };
+  }
+
+  async reviewEvent(eventId, decision, adminUserId, denialReason) {
+    const event = await eventRepository.findById(eventId);
+
+    if (!event) {
+      throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const normalizedDecision = String(decision || '').trim().toLowerCase();
+
+    if (normalizedDecision !== EVENT_APPROVAL_STATUS.APPROVED && normalizedDecision !== EVENT_APPROVAL_STATUS.DENIED) {
+      throw new AppError("decision must be either 'approved' or 'denied'", HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const update = {
+      approvalStatus: normalizedDecision,
+      isPublished: normalizedDecision === EVENT_APPROVAL_STATUS.APPROVED,
+      reviewedBy: adminUserId,
+      reviewedAt: new Date(),
+      denialReason: normalizedDecision === EVENT_APPROVAL_STATUS.DENIED ? denialReason || null : null
+    };
+
+    return eventRepository.updateById(eventId, update);
   }
 }
 

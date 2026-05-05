@@ -1,5 +1,6 @@
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
+const { EVENT_APPROVAL_STATUS } = require('../models/event.model');
 
 function isValidDate(value) {
   return !Number.isNaN(new Date(value).getTime());
@@ -55,4 +56,19 @@ function validateEventPayload(payload, isUpdate = false) {
   }
 }
 
-module.exports = { validateEventPayload };
+function validateReviewPayload(payload) {
+  const decision = String(payload.decision || '').trim().toLowerCase();
+
+  if (decision !== EVENT_APPROVAL_STATUS.APPROVED && decision !== EVENT_APPROVAL_STATUS.DENIED) {
+    throw new AppError("decision must be either 'approved' or 'denied'", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (decision === EVENT_APPROVAL_STATUS.DENIED) {
+    const denialReason = String(payload.denialReason || '').trim();
+    if (!denialReason) {
+      throw new AppError('denialReason is required when decision is denied', HTTP_STATUS.BAD_REQUEST);
+    }
+  }
+}
+
+module.exports = { validateEventPayload, validateReviewPayload };
