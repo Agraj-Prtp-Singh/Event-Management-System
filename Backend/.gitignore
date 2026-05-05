@@ -3,13 +3,17 @@ node_modules/
 
 # Environment variables (Crucial for MongoDB URI/Passwords)
 .env
-.env.test
-.env.production
+.env.*
+!.env.example
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
+
+# Production builds / generated output
+dist/
+build/
 
 # Runtime files
 pids
@@ -22,3 +26,8 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
