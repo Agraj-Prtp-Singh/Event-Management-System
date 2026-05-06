@@ -28,7 +28,7 @@ const normalizeAttendee = (registration) => ({
       })
     : "Unknown",
   status: registration.status || "registered",
-  eventTitle: registration.eventId?.title || "",
+  eventTitle: registration.eventId?.title || registration.eventTitle || "Unknown event",
 });
 
 export default function Attendees() {
@@ -78,13 +78,13 @@ export default function Attendees() {
   const displayed = showAll ? filtered : filtered.slice(0, 3);
 
   const handleExportCSV = () => {
-    const headers = ["Name", "Email", "Booked", "Status", "Event"];
+    const headers = ["Name", "Email", "Event", "Booked", "Status"];
     const rows = allAttendees.map((attendee) => [
       attendee.name,
       attendee.email,
+      attendee.eventTitle,
       attendee.booked,
       attendee.status,
-      attendee.eventTitle,
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -153,10 +153,11 @@ export default function Attendees() {
           </button>
         </div>
 
-        <div className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-hidden">
-          <div className="grid grid-cols-4 px-6 py-3 text-xs text-gray-400 font-medium border-b border-black/10 bg-gray-50">
+        <div className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-x-auto">
+          <div className="min-w-[760px] grid grid-cols-[1.1fr_1.3fr_1.2fr_0.9fr_0.8fr] gap-4 px-6 py-3 text-xs text-gray-400 font-medium border-b border-black/10 bg-gray-50">
             <span>Name</span>
             <span>Email</span>
+            <span>Event</span>
             <span className="text-center">Booked</span>
             <span className="text-center">Status</span>
           </div>
@@ -174,12 +175,13 @@ export default function Attendees() {
             displayed.map((attendee) => (
               <div
                 key={attendee.id}
-                className="grid grid-cols-4 items-center px-6 py-4 border-b border-black/5 last:border-b-0 hover:bg-gray-50 transition"
+                className="min-w-[760px] grid grid-cols-[1.1fr_1.3fr_1.2fr_0.9fr_0.8fr] gap-4 items-center px-6 py-4 border-b border-black/5 last:border-b-0 hover:bg-gray-50 transition"
               >
                 <span className="font-semibold text-gray-900 text-sm truncate">
                   {attendee.name}
                 </span>
                 <span className="text-xs text-gray-500 truncate">{attendee.email}</span>
+                <span className="text-xs text-gray-600 truncate">{attendee.eventTitle}</span>
                 <span className="text-xs text-gray-500 text-center">{attendee.booked}</span>
                 <div className="flex justify-center">
                   <span

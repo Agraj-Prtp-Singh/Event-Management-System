@@ -9,7 +9,7 @@ const ROLE_HOME_ROUTES = {
   vendor: "/vendor/dashboard",
   planner: "/planner/dashboard",
   event_planner: "/planner/dashboard",
-  organizer: "/planner/dashboard",
+
 };
 
 const getStorages = () => [localStorage, sessionStorage];
@@ -53,8 +53,7 @@ export function normalizeRole(role) {
   if (
     normalized === "event_planner" ||
     normalized === "event-planner" ||
-    normalized === "planner" ||
-    normalized === "organizer"
+    normalized === "planner"
   ) {
     return "event_planner";
   }

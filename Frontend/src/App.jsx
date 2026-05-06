@@ -292,7 +292,7 @@ function App() {
         }
       />
       <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
-      <Route path="/organizer" element={<Navigate to="/planner/dashboard" replace />} />
+
       <Route path="/planner" element={<Navigate to="/planner/dashboard" replace />} />
       <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
     </Routes>

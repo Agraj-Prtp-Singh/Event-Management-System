@@ -151,7 +151,11 @@ export default function AdminEventCards() {
 
     try {
       await reviewAdminEvent(id, "approved");
-      fetchEvents();
+      setEvents((currentEvents) =>
+        currentEvents.map((event) =>
+          event.id === id ? { ...event, status: "Approved" } : event
+        )
+      );
     } catch (err) {
       setError(err.message || "Failed to approve event.");
     } finally {
@@ -166,7 +170,9 @@ export default function AdminEventCards() {
     try {
       await reviewAdminEvent(id, "denied", "Rejected by admin");
       setEvents((currentEvents) =>
-        currentEvents.filter((event) => event.id !== id)
+        currentEvents.map((event) =>
+          event.id === id ? { ...event, status: "Rejected" } : event
+        )
       );
       setRejectedEventsCount((currentCount) => currentCount + 1);
 

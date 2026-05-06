@@ -7,7 +7,6 @@ import {
   CalendarDays,
   Users,
   PuzzleIcon,
-  BarChart2,
   LogOut,
 } from "lucide-react";
 import logo from "../assets/logo.png";
@@ -18,7 +17,6 @@ const navItems = [
   { id: "events",    label: "My Events",  icon: CalendarDays,   to: "/planner/events"    },
   { id: "attendees", label: "Attendees",  icon: Users,          to: "/planner/attendees" },
   { id: "apps",      label: "Vendor Apps",icon: PuzzleIcon,     to: "/planner/apps"      },
-  { id: "analytics", label: "Analytics",  icon: BarChart2,      to: "/planner/analytics" },
 ];
 
 export default function PlannerSidebar() {

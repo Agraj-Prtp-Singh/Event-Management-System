@@ -14,8 +14,7 @@ const ROLE_ALIASES = {
   seller: ROLES.VENDOR,
   eventplanner: ROLES.EVENT_PLANNER,
   planner: ROLES.EVENT_PLANNER,
-  organizer: ROLES.EVENT_PLANNER,
-  eventorganizer: ROLES.EVENT_PLANNER,
+
   admin: ROLES.ADMIN,
   administrator: ROLES.ADMIN
 };

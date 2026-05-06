@@ -52,7 +52,9 @@ function ActionButton({
     neutral:
       "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
     success: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    successDark: "bg-emerald-600 text-white cursor-default",
     warning: "bg-amber-50 text-amber-700 hover:bg-amber-100",
+    warningDark: "bg-amber-600 text-white cursor-default",
     danger: "bg-red-50 text-red-600 hover:bg-red-100",
   };
 
@@ -202,18 +204,34 @@ export default function AdminEventEditCard({
                 disabled={isBusy}
               />
               <ActionButton
-                label={isBusy ? "Approving..." : "Approve"}
+                label={
+                  event.status === "Approved"
+                    ? "Approved"
+                    : isBusy
+                    ? "Approving..."
+                    : "Approve"
+                }
                 icon={CheckCircle2}
                 onClick={onApprove}
-                variant="success"
-                disabled={isBusy}
+                variant={
+                  event.status === "Approved" ? "successDark" : "success"
+                }
+                disabled={isBusy || event.status === "Approved"}
               />
               <ActionButton
-                label={isBusy ? "Rejecting..." : "Reject"}
+                label={
+                  event.status === "Rejected"
+                    ? "Rejected"
+                    : isBusy
+                    ? "Rejecting..."
+                    : "Reject"
+                }
                 icon={X}
                 onClick={onReject}
-                variant="warning"
-                disabled={isBusy}
+                variant={
+                  event.status === "Rejected" ? "warningDark" : "warning"
+                }
+                disabled={isBusy || event.status === "Rejected"}
               />
               <ActionButton
                 label={isBusy ? "Deleting..." : "Delete"}

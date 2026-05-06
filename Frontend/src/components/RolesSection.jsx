@@ -29,7 +29,7 @@ export default function RolesSection() {
           {roles.map((role, index) => (
             <div
               key={index}
-              className="group flex items-center justify-between bg-white/30 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
+              className="group flex items-center justify-between gap-6 bg-white/30 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
             >
               {/* Left Section */}
               <div className="flex items-center gap-3 sm:gap-4">
