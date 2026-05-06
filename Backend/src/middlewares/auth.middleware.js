@@ -15,7 +15,7 @@ const authMiddleware = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = {
-      id: decoded.id,
+      id: decoded.sub || decoded.id,
       email: decoded.email,
       role: decoded.role
     };
@@ -26,4 +26,18 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED));
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(new AppError('Forbidden', HTTP_STATUS.FORBIDDEN));
+    }
+
+    next();
+  };
+};
+
+module.exports = { authMiddleware, authorize };
