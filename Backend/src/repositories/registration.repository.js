@@ -1,6 +1,13 @@
 const Registration = require('../models/registration.model');
 
 class RegistrationRepository {
+  #registeredFilter(extra = {}) {
+    return {
+      ...extra,
+      $or: [{ status: 'registered' }, { status: { $exists: false } }]
+    };
+  }
+
   create(data) {
     return Registration.create(data);
   }
@@ -10,11 +17,15 @@ class RegistrationRepository {
   }
 
   countByEvent(eventId) {
-    return Registration.countDocuments({ eventId, status: 'registered' });
+    return Registration.countDocuments(this.#registeredFilter({ eventId }));
+  }
+
+  countByUser(userId) {
+    return Registration.countDocuments(this.#registeredFilter({ userId }));
   }
 
   listByUser(userId) {
-    return Registration.find({ userId, status: 'registered' })
+    return Registration.find(this.#registeredFilter({ userId }))
       .sort({ createdAt: -1 })
       .populate('eventId');
   }
@@ -24,17 +35,38 @@ class RegistrationRepository {
   }
 
   listByEvent(eventId) {
-    return Registration.find({ eventId, status: 'registered' })
+    return Registration.find(this.#registeredFilter({ eventId }))
       .sort({ createdAt: -1 })
       .populate('userId', 'fullName phone email role');
   }
 
   cancel(userId, eventId) {
     return Registration.findOneAndUpdate(
-      { userId, eventId, status: 'registered' },
+      this.#registeredFilter({ userId, eventId }),
       { status: 'cancelled' },
       { new: true }
     );
+  }
+
+  cancelById(registrationId, userId) {
+    return Registration.findOneAndUpdate(
+      this.#registeredFilter({ _id: registrationId, userId }),
+      { status: 'cancelled' },
+      { new: true }
+    );
+  }
+
+  countByEventIds(eventIds) {
+    return Registration.countDocuments(
+      this.#registeredFilter({ eventId: { $in: eventIds } })
+    );
+  }
+
+  listByEventIds(eventIds) {
+    return Registration.find(this.#registeredFilter({ eventId: { $in: eventIds } }))
+      .sort({ createdAt: -1 })
+      .populate('eventId')
+      .populate('userId', 'fullName phone email role');
   }
 }
 

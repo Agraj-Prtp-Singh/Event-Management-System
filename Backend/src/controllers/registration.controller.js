@@ -9,7 +9,7 @@ const registerForEvent = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: 'Event registration successful',
+    message: 'Event registered successfully',
     data: registration
   });
 });
@@ -25,12 +25,11 @@ const cancelMyRegistration = asyncHandler(async (req, res) => {
   });
 });
 
-const listMyRegistrations = asyncHandler(async (req, res) => {
+const getMyRegistrations = asyncHandler(async (req, res) => {
   const registrations = await registrationService.listMyRegistrations(req.user.id);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'My registrations fetched successfully',
     data: registrations
   });
 });
@@ -54,6 +53,9 @@ const scanTicketForEventDetails = asyncHandler(async (req, res) => {
 module.exports = {
   registerForEvent,
   cancelMyRegistration,
-  listMyRegistrations,
+  getMyRegistrations,
+  register: registerForEvent,
+  cancel: cancelMyRegistration,
+  listMyRegistrations: getMyRegistrations,
   scanTicketForEventDetails
 };

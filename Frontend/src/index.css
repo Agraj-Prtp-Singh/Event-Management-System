@@ -1,0 +1,58 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+@layer utilities {
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .slide-in-from-top {
+    animation-name: slideInFromTop;
+  }
+
+  .duration-300 {
+    animation-duration: 300ms;
+  }
+  .duration-200 {
+    animation-duration: 200ms;
+  }
+
+  /*  Variant 1:  Purple Premium */
+  .text-gradient-premium {
+    @apply bg-gradient-to-r from-[#0b0220] via-purple-700 to-indigo-500 bg-clip-text text-transparent transition-all duration-500;
+  }
+
+  .text-gradient-premium:hover {
+    @apply from-purple-600 via-indigo-500 to-blue-400;
+  }
+
+  /* 🔥 Variant 2:  Blue Glow */
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-[#0b0220] via-blue-800 to-blue-500 bg-clip-text text-transparent transition-all duration-500;
+  }
+
+  .text-gradient-blue:hover {
+    @apply from-[#0b0220] via-blue-700 to-blue-400;
+  }
+
+  /* button gradient: Blue */
+  .button-gradient-blue {
+    @apply bg-gradient-to-r from-[#0b0220] via-blue-800 to-blue-500 
+        hover:from-blue-700 hover:to-blue-400 
+        transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.05];
+  }
+
+  .card-bg {
+    @apply w-full max-w-lg sm:max-w-xl md:max-w-2xl p-4 sm:p-6 md:p-8 rounded-3xl bg-white/50 backdrop-blur-lg shadow-2xl border border-white;
+  }
+}
+
+.input {
+  @apply border border-black/10 rounded-lg px-3 py-2 text-sm w-full 
+         focus:outline-none focus:ring-2 focus:ring-blue-400 
+         shadow-lg mt-1;
+}

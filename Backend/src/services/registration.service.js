@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
-const eventRepository = require('../repositories/event.repository');
 const registrationRepository = require('../repositories/registration.repository');
+const eventRepository = require('../repositories/event.repository');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
 
@@ -9,8 +9,12 @@ class RegistrationService {
   async registerForEvent(eventId, userId) {
     const event = await eventRepository.findById(eventId);
 
-    if (!event || !event.isPublished) {
+    if (!event) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (!event.isPublished) {
+      throw new AppError('Event is not available for registration', HTTP_STATUS.NOT_FOUND);
     }
 
     if (new Date(event.endDate) < new Date()) {
@@ -18,7 +22,7 @@ class RegistrationService {
     }
 
     const existing = await registrationRepository.findOne({ eventId, userId });
-    if (existing && existing.status === 'registered') {
+    if (existing && (!existing.status || existing.status === 'registered')) {
       throw new AppError('You are already registered for this event', HTTP_STATUS.CONFLICT);
     }
 
@@ -46,9 +50,39 @@ class RegistrationService {
     return updated;
   }
 
+  async cancelRegistrationById(registrationId, userId) {
+    const updated = await registrationRepository.cancelById(registrationId, userId);
+
+    if (!updated) {
+      throw new AppError('Active registration not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    return updated;
+  }
+
   async listMyRegistrations(userId) {
     const registrations = await registrationRepository.listByUser(userId);
     return registrations.map((registration) => this.#serializeRegistrationWithTicket(registration, userId));
+  }
+
+  async getStudentStats(userId) {
+    const registrations = await registrationRepository.listByUser(userId);
+    const now = new Date();
+    const total = registrations.length;
+    const upcoming = registrations.filter((registration) => {
+      const start = registration.eventId?.startDate;
+      return start && new Date(start) >= now;
+    }).length;
+    const attended = registrations.filter((registration) => {
+      const end = registration.eventId?.endDate;
+      return end && new Date(end) < now;
+    }).length;
+
+    return {
+      eventsAttended: attended,
+      upcomingEvents: upcoming,
+      totalBookings: total
+    };
   }
 
   async scanTicketForEventDetails(ticketToken, userId) {
