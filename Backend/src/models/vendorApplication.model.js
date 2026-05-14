@@ -20,6 +20,7 @@ const vendorApplicationSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+<<<<<<< HEAD
     plannerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -44,15 +45,40 @@ const vendorApplicationSchema = new mongoose.Schema(
       maxlength: 1000,
       default: ''
     },
+=======
+>>>>>>> 9ddf807c9db2fcd6990408ed41387411cc9ffd10
     status: {
       type: String,
       enum: Object.values(VENDOR_APPLICATION_STATUS),
       default: VENDOR_APPLICATION_STATUS.PENDING,
       index: true
     },
+<<<<<<< HEAD
     reviewedAt: {
       type: Date,
       default: null
+=======
+    message: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: ''
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    reviewedAt: {
+      type: Date,
+      default: null
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: null
+>>>>>>> 9ddf807c9db2fcd6990408ed41387411cc9ffd10
     }
   },
   { timestamps: true }

@@ -30,6 +30,10 @@ class RegistrationRepository {
       .populate('eventId');
   }
 
+  findActiveByIdAndUser(registrationId, userId) {
+    return Registration.findOne({ _id: registrationId, userId, status: 'registered' }).populate('eventId');
+  }
+
   listByEvent(eventId) {
     return Registration.find(this.#registeredFilter({ eventId }))
       .sort({ createdAt: -1 })
