@@ -156,10 +156,11 @@ export const checkInAttendee = async (qrPayload) => {
   }
 };
 
-export const getVendorApplications = async () => {
+export const getVendorApplications = async (status) => {
   try {
+    const query = status ? `?status=${encodeURIComponent(status)}` : "";
     const response = await axios.get(
-      `${BASE_URL}/planner/vendor-applications`,
+      `${BASE_URL}/planner/vendor-applications${query}`,
       getAuthHeaders()
     );
     return normalizeResponse(response);

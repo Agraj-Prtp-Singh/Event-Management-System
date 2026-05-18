@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
-import { getPlannerStats, getPlannerEvents, deleteEvent } from "../api/planner";
+import { Plus, Pencil, Trash2, Loader2, Store } from "lucide-react";
+import {
+  getPlannerStats,
+  getPlannerEvents,
+  deleteEvent,
+  getVendorApplications,
+} from "../api/planner";
 
 const EMPTY_STATS = [
   { value: "0", label: "Events" },
@@ -14,8 +19,10 @@ export default function VendorDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(EMPTY_STATS);
   const [events, setEvents] = useState([]);
+  const [approvedVendors, setApprovedVendors] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingVendors, setLoadingVendors] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
 
@@ -49,6 +56,15 @@ export default function VendorDashboard() {
       .finally(() => setLoadingStats(false));
 
     fetchEvents();
+
+    getVendorApplications("approved")
+      .then((data) => {
+        setApprovedVendors(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        setError(err.message || "Could not load approved vendors.");
+      })
+      .finally(() => setLoadingVendors(false));
   }, []);
 
   const handleDelete = async (eventId) => {
@@ -188,8 +204,58 @@ export default function VendorDashboard() {
 
         <section>
           <h2 className="text-lg font-bold text-gray-800 mb-3">Vendors</h2>
-          <div className="bg-white border border-black/10 rounded-2xl shadow-sm p-8 text-center text-gray-400 text-sm">
-            No vendors assigned yet.
+          <div className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-hidden">
+            {loadingVendors ? (
+              <div className="flex items-center justify-center py-12 text-slate-400 gap-2">
+                <Loader2 size={20} className="animate-spin" />
+                <span className="text-sm">Loading approved vendors...</span>
+              </div>
+            ) : approvedVendors.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">
+                No vendors assigned yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-black/5">
+                {approvedVendors.map((application) => {
+                  const vendor = application.vendorId || {};
+                  const event = application.eventId || {};
+                  const vendorName =
+                    vendor.businessName || vendor.fullName || application.stallName || "Vendor";
+
+                  return (
+                    <div
+                      key={application._id}
+                      className="grid gap-3 px-6 py-4 md:grid-cols-[1.3fr_1fr_auto] md:items-center hover:bg-gray-50 transition"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                          <Store size={18} />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 text-sm">
+                            {vendorName}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {vendor.email || vendor.phoneNumber || vendor.phone || "No contact set"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-gray-400">Assigned event</div>
+                        <div className="text-sm font-medium text-gray-700">
+                          {event.title || "Untitled Event"}
+                        </div>
+                      </div>
+
+                      <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        Approved
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       </div>
