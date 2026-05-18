@@ -7,7 +7,7 @@ import { forgotPassword, resetPassword } from "../api/auth";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,8 +46,13 @@ export default function ForgotPasswordPage() {
   const submitNewPassword = async (event) => {
     event.preventDefault();
 
-    if (!email.trim() || !token.trim() || !newPassword) {
-      setError("Email, reset token, and new password are required.");
+    if (!email.trim() || !otp.trim() || !newPassword) {
+      setError("Email, reset OTP, and new password are required.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setError("Reset OTP must be a 6-digit code.");
       return;
     }
 
@@ -68,7 +73,7 @@ export default function ForgotPasswordPage() {
     try {
       await resetPassword({
         email: email.trim(),
-        token: token.trim(),
+        otp: otp.trim(),
         newPassword,
       });
       setMessage("Password reset successful. You can sign in now.");
@@ -93,8 +98,8 @@ export default function ForgotPasswordPage() {
             <h1 className="text-3xl font-bold">Reset password</h1>
             <p className="mt-1 text-sm text-gray-500">
               {step === "request"
-                ? "Enter your email to receive a reset token."
-                : "Enter the token from your email and choose a new password."}
+                ? "Enter your email to receive a reset OTP."
+                : "Enter the OTP from your email and choose a new password."}
             </p>
           </div>
 
@@ -120,14 +125,18 @@ export default function ForgotPasswordPage() {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1 text-sm font-semibold">
-                    Reset token<span className="text-red-500">*</span>
+                    Reset OTP<span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={token}
-                    onChange={(event) => setToken(event.target.value)}
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(event) =>
+                      setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
                     className="rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Paste reset token"
+                    placeholder="Enter 6-digit OTP"
                     required
                   />
                 </div>
@@ -184,7 +193,7 @@ export default function ForgotPasswordPage() {
               {loading
                 ? "Please wait..."
                 : step === "request"
-                  ? "Send reset token"
+                  ? "Send reset OTP"
                   : "Reset password"}
             </button>
           </form>
@@ -197,7 +206,7 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 className="font-semibold text-blue-600 hover:underline disabled:opacity-60"
               >
-                Resend token
+                Resend OTP
               </button>
             ) : (
               <span />
