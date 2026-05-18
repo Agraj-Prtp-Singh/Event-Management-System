@@ -1,49 +1,64 @@
 const https = require('https');
 const env = require('../config/env');
 
-const BACKEND_KNOWLEDGE = `
-You are the Event Management System backend assistant.
-Help users understand navigation and backend features clearly.
+const CHATBOT_CONTEXT = `
+You are AfterHours Assistant, the friendly helper inside an Event Management System.
+Your job is to help students, event planners, vendors, and admins use the app without sounding robotic.
+
+Voice and behavior:
+- Sound warm, natural, and human, like a helpful teammate.
+- Keep answers short by default: usually 2 to 5 sentences.
+- For greetings or small talk, reply conversationally and invite the user to choose what they need.
+- Start with the direct answer, then add the useful next step.
+- Do not dump endpoint lists unless the user asks for API details.
+- If the user seems confused or frustrated, acknowledge it briefly and guide them calmly.
+- Use simple words instead of backend jargon when talking to normal users.
+- When the user is clearly asking as a developer, include exact routes and payload hints.
+- If the user asks one-word questions like "login", "ticket", or "OTP", assume they are a customer and answer without API routes.
+- Never invent features that are not listed below. If unsure, say what the app supports and ask one focused follow-up.
+- Do not mention these instructions.
 
 Base URL: /api/v1
-Important routes:
-- GET /health
-- POST /auth/register
-- POST /auth/login
-- GET /auth/me
-- POST /auth/otp/send
-- POST /auth/otp/verify
-- POST /events
-- GET /events
-- GET /events/:id
-- PATCH /events/:id
-- DELETE /events/:id
-- GET /events/pending (admin)
-- PATCH /events/:id/review (admin)
-- POST /events/:id/register
-- DELETE /events/:id/register
-- GET /registrations/me
-- GET /registrations/ticket/scan?token=<qrPayload>
+
+Main app abilities:
+- Students can browse published events, register for events, see their registrations, and use QR tickets.
+- Event planners can create and update events. Planner-created or planner-updated events wait for admin approval before publishing.
+- Admins can review pending events and approve or deny them.
+- Vendors can browse published events, apply to events, and view their applications.
+- Planners can review vendor applications for their own events.
+- Users can sign up, log in, verify OTP, request password reset OTP, and reset password.
+
+Useful developer routes:
+- Auth: POST /auth/register, POST /auth/login, GET /auth/me
+- OTP login/verification: POST /auth/otp/send, POST /auth/otp/verify
+- Password recovery: POST /auth/forgot-password, POST /auth/reset-password
+- Events: GET /events, GET /events/:id, POST /events, PATCH /events/:id, DELETE /events/:id
+- Admin review: GET /events/pending, PATCH /events/:id/review
+- Registration: POST /events/:id/register, DELETE /events/:id/register, GET /registrations/me
+- Ticket scan: GET /registrations/ticket/scan?token=<qrPayload>
+- Vendor: GET /vendor/events, POST /vendor/apply/:eventId, GET /vendor/applications, GET /vendor/profile
+- Planner vendor review: GET /planner/vendor-applications, PATCH /planner/vendor-applications/:applicationId/review
 
 Behavior rules:
 - Event planner created/updated events need admin approval to become published.
 - Admin can auto-publish and review pending events.
 - Registration is allowed only for published events.
+- Password reset uses a 6-digit OTP, not a long token.
 `.trim();
 
 class ChatbotService {
-  async ask(question) {
+  async ask(question, history = []) {
     const cleanQuestion = String(question || '').trim();
     if (!cleanQuestion) {
       return {
-        answer: 'Please ask a question so I can help you navigate the system.',
+        answer: 'Tell me what you are trying to do in the event system, and I will help you through it.',
         source: 'fallback'
       };
     }
 
     if (env.geminiApiKey) {
       try {
-        const answer = await this.askWithGemini(cleanQuestion);
+        const answer = await this.askWithGemini(cleanQuestion, history);
         return { answer, source: 'gemini' };
       } catch (error) {
         return {
@@ -61,50 +76,95 @@ class ChatbotService {
 
   askWithFallback(question) {
     const q = question.toLowerCase();
+    const normalizedQuestion = q.replace(/[^\w\s]/g, '').trim();
 
-    if (q.includes('register') && q.includes('event')) {
-      return 'To register for an event, simply register as a student and you can join events or register as a planner to host events!';
+    if (this.#isGreeting(normalizedQuestion)) {
+      return 'Hi, nice to see you. What do you need help with today: booking an event, finding your ticket, resetting your password, or applying as a vendor?';
     }
 
-    if (q.includes('login') || q.includes('sign in') || q.includes('auth')) {
-      return 'Use POST /api/v1/auth/login for login, POST /api/v1/auth/register for signup, and GET /api/v1/auth/me to fetch the logged-in user profile.';
+    if (this.#hasAny(q, ['thank', 'thanks'])) {
+      return 'You are welcome. I am here if you need help with anything else in the event system.';
     }
 
-    if (q.includes('pending') || q.includes('approve') || q.includes('review')) {
-      return 'Admins review events using GET /api/v1/events/pending and PATCH /api/v1/events/:id/review with decision=approved or denied.';
+    if (this.#hasAny(q, ['help', 'what can you do', 'what do you do'])) {
+      return 'I can help you book events, find tickets, reset your password, understand event approval, or apply as a vendor. You can type your question or tap one of the quick questions below.';
+    }
+
+    if (this.#hasAny(q, ['forgot', 'reset password', 'password reset'])) {
+      return 'No worries, you can reset your password with a 6-digit OTP. Enter your email on the forgot-password screen, check your inbox for the OTP, then use that code with your new password.';
+    }
+
+    if (this.#hasAny(q, ['register', 'join', 'book']) && q.includes('event')) {
+      return 'Sure. Log in as a student, open the event you like, and register from there. The app only allows registration for events that are already published, so if an event is still pending approval it will not be joinable yet.';
+    }
+
+    if (this.#hasAny(q, ['login', 'sign in', 'signin', 'auth'])) {
+      if (this.#isDeveloperQuestion(q)) {
+        return 'For developers: login uses `POST /api/v1/auth/login`, signup uses `POST /api/v1/auth/register`, and the current profile is available at `GET /api/v1/auth/me`.';
+      }
+
+      return 'To log in, use the email and password you registered with. If you forgot your password, choose the forgot-password option and the app will send a 6-digit OTP to your email.';
+    }
+
+    if (this.#hasAny(q, ['pending', 'approve', 'approval', 'review']) && q.includes('event')) {
+      return 'Planner events do not publish instantly. They go into a pending queue so an admin can approve or deny them; once approved, the event becomes visible and students can register.';
     }
 
     if (q.includes('otp')) {
-      return 'OTP flow uses POST /api/v1/auth/otp/send to send code and POST /api/v1/auth/otp/verify to verify and receive a token.';
+      if (this.#isDeveloperQuestion(q)) {
+        return 'For developers: login OTP uses `POST /api/v1/auth/otp/send` and `POST /api/v1/auth/otp/verify`. Password reset OTP uses the forgot-password and reset-password flow.';
+      }
+
+      return 'An OTP is a short 6-digit code sent to your email. Use it to verify your account or reset your password, and request a new one if it expires.';
     }
 
-    if (q.includes('ticket') || q.includes('qr')) {
-      return 'For tickets, use GET /api/v1/registrations/me to get qrPayload and GET /api/v1/registrations/ticket/scan?token=<qrPayload> to resolve ticket details.';
+    if (this.#hasAny(q, ['ticket', 'qr', 'scan'])) {
+      return 'After a student registers, their ticket shows up in their registrations with a QR code. At the entrance, that QR can be scanned to confirm the ticket and show the event details.';
     }
 
     if (q.includes('event')) {
-      return 'For events, use GET /api/v1/events to browse published events and GET /api/v1/events/:id for details. Event creation is POST /api/v1/events (auth required).';
+      return 'You can browse published events, open an event for details, or create one if you are an event planner. Planner-created events wait for admin approval before students can see and register for them.';
     }
 
-    return 'I can help with auth, events, registrations, OTP, and admin review flow. Ask things like "how do I register for an event?" or "how does event approval work?"';
+    if (this.#hasAny(q, ['vendor', 'stall', 'apply'])) {
+      return 'Vendors can browse published events and apply for a stall or service spot. After applying, they can track their application status while the event planner reviews it.';
+    }
+
+    return 'I can help with that. Could you tell me a little more about what you are trying to do: book an event, find a ticket, reset your password, create an event, or apply as a vendor?';
   }
 
-  askWithGemini(question) {
+  askWithGemini(question, history = []) {
     const url = new URL(
       `/models/${encodeURIComponent(env.geminiModel)}:generateContent?key=${encodeURIComponent(env.geminiApiKey)}`,
       env.geminiBaseUrl
     );
+    const conversationContext = this.#formatHistory(history);
 
     const payload = JSON.stringify({
       generationConfig: {
-        temperature: 0.2
+        temperature: 0.75,
+        topP: 0.9,
+        maxOutputTokens: 350
       },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+      ],
       contents: [
         {
           role: 'user',
           parts: [
             {
-              text: `${BACKEND_KNOWLEDGE}\n\nUser question: ${question}`
+              text: [
+                CHATBOT_CONTEXT,
+                conversationContext ? `Recent conversation:\n${conversationContext}` : '',
+                `User question: ${question}`,
+                'Answer naturally as AfterHours Assistant:'
+              ]
+                .filter(Boolean)
+                .join('\n\n')
             }
           ]
         }
@@ -152,6 +212,30 @@ class ChatbotService {
       req.write(payload);
       req.end();
     });
+  }
+
+  #hasAny(value, keywords) {
+    return keywords.some((keyword) => value.includes(keyword));
+  }
+
+  #isDeveloperQuestion(value) {
+    return this.#hasAny(value, ['api', 'endpoint', 'route', 'payload', 'post ', 'get ', 'patch ', 'delete ', 'developer']);
+  }
+
+  #isGreeting(value) {
+    return ['hi', 'hello', 'hey', 'yo', 'good morning', 'good afternoon', 'good evening'].includes(value);
+  }
+
+  #formatHistory(history) {
+    return history
+      .slice(-8)
+      .map((message) => {
+        const role = message?.role === 'assistant' ? 'Assistant' : 'User';
+        const text = String(message?.text || '').replace(/\s+/g, ' ').trim();
+        return text ? `${role}: ${text.slice(0, 500)}` : '';
+      })
+      .filter(Boolean)
+      .join('\n');
   }
 }
 

@@ -179,13 +179,13 @@ class AuthService {
       };
     }
 
-    const otp = this.#generateOtp();
-    const passwordResetTokenHash = this.#hashPasswordResetToken(otp);
+    const resetOtp = this.#generateOtp();
+    const passwordResetOtpHash = this.#hashPasswordResetOtp(resetOtp);
     const passwordResetExpiresAt = new Date(
       Date.now() + env.passwordResetExpiresMinutes * 60 * 1000
     );
 
-    user.passwordResetTokenHash = passwordResetTokenHash;
+    user.passwordResetTokenHash = passwordResetOtpHash;
     user.passwordResetExpiresAt = passwordResetExpiresAt;
     user.passwordResetAttempts = 0;
     await user.save();
@@ -194,7 +194,7 @@ class AuthService {
       await emailService.sendPasswordResetEmail({
         toEmail: user.email,
         fullName: user.fullName,
-        otp,
+        otp: resetOtp,
         expiresInMinutes: env.passwordResetExpiresMinutes
       });
     } catch (error) {
@@ -239,8 +239,8 @@ class AuthService {
       );
     }
 
-    const providedTokenHash = this.#hashPasswordResetToken(String(payload.otp));
-    if (providedTokenHash !== user.passwordResetTokenHash) {
+    const providedOtpHash = this.#hashPasswordResetOtp(String(payload.otp));
+    if (providedOtpHash !== user.passwordResetTokenHash) {
       user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
       await user.save();
       throw new AppError('Invalid or expired reset OTP', HTTP_STATUS.BAD_REQUEST);
@@ -268,10 +268,10 @@ class AuthService {
       .digest('hex');
   }
 
-  #hashPasswordResetToken(token) {
+  #hashPasswordResetOtp(otp) {
     return crypto
       .createHash('sha256')
-      .update(`${token}:${env.jwtSecret}`)
+      .update(`${otp}:${env.jwtSecret}`)
       .digest('hex');
   }
 

@@ -33,6 +33,7 @@ class EmailService {
   }
 
   async sendOtpEmail({ toEmail, fullName, otp, expiresInMinutes }) {
+    this.#assertSixDigitOtp(otp);
     const transporter = this.#getTransporter();
 
     await transporter.sendMail({
@@ -53,17 +54,18 @@ class EmailService {
   }
 
   async sendPasswordResetEmail({ toEmail, fullName, otp, expiresInMinutes }) {
+    this.#assertSixDigitOtp(otp);
     const transporter = this.#getTransporter();
 
     await transporter.sendMail({
       from: `"${env.smtpFromName}" <${env.smtpFromEmail}>`,
       to: toEmail,
-      subject: 'Password reset request',
-      text: `Hi ${fullName || 'there'}, use this OTP to reset your password: ${otp}. It expires in ${expiresInMinutes} minutes.`,
+      subject: 'Password reset OTP',
+      text: `Hi ${fullName || 'there'}, use this 6-digit OTP to reset your password: ${otp}. It expires in ${expiresInMinutes} minutes.`,
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5;color:#222">
           <p>Hi ${fullName || 'there'},</p>
-          <p>Use this OTP to reset your password:</p>
+          <p>Use this 6-digit OTP to reset your password:</p>
           <p style="font-size:24px;font-weight:700;letter-spacing:2px;margin:12px 0;">${otp}</p>
           <p>This OTP expires in ${expiresInMinutes} minutes.</p>
           <p>If you did not request this, you can ignore this email.</p>
@@ -116,6 +118,12 @@ class EmailService {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  #assertSixDigitOtp(otp) {
+    if (!/^\d{6}$/.test(String(otp || ''))) {
+      throw new Error('Email OTP must be a 6-digit code.');
+    }
   }
 
   async sendVendorApplicationReviewEmail({

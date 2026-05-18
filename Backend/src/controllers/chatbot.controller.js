@@ -14,7 +14,8 @@ const askChatbot = asyncHandler(async (req, res) => {
     throw new AppError('question must be at most 1000 characters', HTTP_STATUS.BAD_REQUEST);
   }
 
-  const data = await chatbotService.ask(question);
+  const history = Array.isArray(req.body?.history) ? req.body.history : [];
+  const data = await chatbotService.ask(question, history);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,

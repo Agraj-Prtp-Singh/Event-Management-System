@@ -4,18 +4,30 @@ import { MessageCircleMore, X, Send } from "lucide-react";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
 
+const QUICK_QUESTIONS = [
+  "How do I book an event?",
+  "How do I reset my password?",
+  "Where is my ticket?",
+  "How do vendors apply?",
+  "Why is my event pending?",
+];
+
 export default function AskAI() {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi! How can I help you?" }
+    {
+      role: "assistant",
+      text: "Hi, I am here to help with bookings, tickets, login, events, or vendor applications.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const sendMessage = async (presetQuestion) => {
+    const messageText = String(presetQuestion || input).trim();
+    if (!messageText) return;
 
-    const userMessage = { role: "user", text: input };
+    const userMessage = { role: "user", text: messageText };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
@@ -27,6 +39,7 @@ export default function AskAI() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question: userMessage.text,
+          history: messages.slice(-8),
         }),
       });
 
@@ -60,19 +73,20 @@ export default function AskAI() {
 
   return (
     <>
-      {/* Chat Popup */}
       {chatOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] bg-white border border-blue-100 rounded-2xl shadow-2xl shadow-blue-500/20 flex flex-col overflow-hidden">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-blue-500 text-white">
             <span className="font-semibold text-sm">Ask AI</span>
-            <button onClick={() => setChatOpen(false)} className="hover:opacity-70 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              className="hover:opacity-70 cursor-pointer"
+            >
               <X size={16} />
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-72">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-80">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -85,6 +99,23 @@ export default function AskAI() {
                 {msg.text}
               </div>
             ))}
+
+            {!loading && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {QUICK_QUESTIONS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => sendMessage(question)}
+                    className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-left text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                    disabled={loading}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {loading && (
               <div className="text-sm px-3 py-2 rounded-xl bg-gray-100 text-gray-400 max-w-[85%]">
                 Typing...
@@ -92,7 +123,6 @@ export default function AskAI() {
             )}
           </div>
 
-          {/* Input */}
           <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200">
             <input
               type="text"
@@ -103,7 +133,8 @@ export default function AskAI() {
               className="flex-1 text-sm outline-none bg-transparent"
             />
             <button
-              onClick={sendMessage}
+              type="button"
+              onClick={() => sendMessage()}
               disabled={loading}
               className="text-blue-500 hover:text-blue-600 cursor-pointer disabled:opacity-40"
             >
@@ -113,7 +144,6 @@ export default function AskAI() {
         </div>
       )}
 
-      {/* Floating Button */}
       <button
         type="button"
         onClick={() => setChatOpen(!chatOpen)}
