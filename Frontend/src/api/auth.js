@@ -37,6 +37,44 @@ export const loginUser = async ({ email, password }) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  try {
+    const response = await axios.post(
+      `${AUTH_URL}/forgot-password`,
+      { email },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return unwrapResponse(response);
+  } catch (error) {
+    throw new Error(
+      getApiErrorMessage(error, "Failed to send password reset instructions"),
+    );
+  }
+};
+
+export const resetPassword = async ({ email, token, newPassword }) => {
+  try {
+    const response = await axios.post(
+      `${AUTH_URL}/reset-password`,
+      { email, token, newPassword },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return unwrapResponse(response);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, "Password reset failed"));
+  }
+};
+
 export const registerUser = async (userData) => {
   try {
     const response = await axios.post(`${AUTH_URL}/register`, userData, {

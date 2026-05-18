@@ -11,6 +11,7 @@ import AdminEvents from "./pages/AdminEvents";
 import AdminSettings from "./pages/AdminSettings";
 import Footer from "./components/Footer";
 import Login from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import AskAI from "./components/AskAI";
 import StudentDashboard from "./pages/Studentdashboard";
 import BrowseStudentEvents from "./pages/BrowseStudentEvents";
@@ -140,6 +141,14 @@ function App() {
           element={
             <PublicOnlyRoute>
               <Login />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicOnlyRoute>
+              <ForgotPasswordPage />
             </PublicOnlyRoute>
           }
         />

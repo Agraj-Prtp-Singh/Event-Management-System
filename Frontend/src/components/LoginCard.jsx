@@ -98,9 +98,13 @@ export default function LoginCard() {
               />
               Remember me
             </label>
-            <span className="text-blue-500 text-sm font-medium cursor-pointer hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-blue-500 text-sm font-medium cursor-pointer hover:underline"
+            >
               Forgot password?
-            </span>
+            </button>
           </div>
 
           {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
