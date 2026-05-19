@@ -1,5 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const chatbotService = require('../services/chatbot.service');
+const chatLogService = require('../services/chatLog.service');
 const HTTP_STATUS = require('../constants/httpStatus');
 const AppError = require('../utils/appError');
 
@@ -15,7 +16,28 @@ const askChatbot = asyncHandler(async (req, res) => {
   }
 
   const history = Array.isArray(req.body?.history) ? req.body.history : [];
-  const data = await chatbotService.ask(question, history);
+  const data = await chatbotService.ask(question, history, req.user?.role);
+  const conversationId = req.body?.conversationId;
+
+  if (req.user?.id) {
+    try {
+      await chatLogService.createLog(req.user.id, {
+        role: 'user',
+        message: question,
+        conversationId,
+        metadata: { source: 'chatbot' }
+      });
+
+      await chatLogService.createLog(req.user.id, {
+        role: 'assistant',
+        message: data.answer,
+        conversationId,
+        metadata: { source: data.source || 'fallback' }
+      });
+    } catch (error) {
+      // Do not block chatbot response if log persistence fails.
+    }
+  }
 
   res.status(HTTP_STATUS.OK).json({
     success: true,

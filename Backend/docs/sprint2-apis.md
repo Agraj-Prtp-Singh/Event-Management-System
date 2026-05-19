@@ -144,6 +144,8 @@ Notes:
 - `question` is required and must be a non-empty string (max 1000 chars).
 - If `GEMINI_API_KEY` is configured, chatbot uses Gemini (`source: "gemini"`).
 - If Gemini is not configured or fails, chatbot uses local fallback (`source: "fallback"`).
+- If a valid Bearer token is provided, user and assistant messages are auto-saved to `chatlogs`.
+- Optional field: `conversationId` can be sent in body to group logs by conversation.
 
 ### Gemini Health Check (Chatbot)
 Use this endpoint to verify Gemini integration:

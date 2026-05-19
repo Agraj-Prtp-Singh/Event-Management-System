@@ -40,4 +40,26 @@ const authorize = (...allowedRoles) => {
   };
 };
 
-module.exports = { authMiddleware, authorize };
+const optionalAuthMiddleware = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = {
+      id: decoded.sub || decoded.id,
+      email: decoded.email,
+      role: decoded.role
+    };
+
+    return next();
+  } catch (error) {
+    return next();
+  }
+};
+
+module.exports = { authMiddleware, authorize, optionalAuthMiddleware };

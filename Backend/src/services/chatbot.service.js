@@ -1,5 +1,6 @@
 const https = require('https');
 const env = require('../config/env');
+const { ROLES } = require('../constants/roles');
 
 const CHATBOT_CONTEXT = `
 You are AfterHours Assistant, the friendly helper inside an Event Management System.
@@ -47,8 +48,9 @@ Behavior rules:
 `.trim();
 
 class ChatbotService {
-  async ask(question, history = []) {
+  async ask(question, history = [], userRole) {
     const cleanQuestion = String(question || '').trim();
+    const normalizedRole = this.#normalizeRole(userRole);
     if (!cleanQuestion) {
       return {
         answer: 'Tell me what you are trying to do in the event system, and I will help you through it.',
@@ -58,23 +60,23 @@ class ChatbotService {
 
     if (env.geminiApiKey) {
       try {
-        const answer = await this.askWithGemini(cleanQuestion, history);
+        const answer = await this.askWithGemini(cleanQuestion, history, normalizedRole);
         return { answer, source: 'gemini' };
       } catch (error) {
         return {
-          answer: this.askWithFallback(cleanQuestion),
+          answer: this.askWithFallback(cleanQuestion, normalizedRole),
           source: 'fallback'
         };
       }
     }
 
     return {
-      answer: this.askWithFallback(cleanQuestion),
+      answer: this.askWithFallback(cleanQuestion, normalizedRole),
       source: 'fallback'
     };
   }
 
-  askWithFallback(question) {
+  askWithFallback(question, userRole) {
     const q = question.toLowerCase();
     const normalizedQuestion = q.replace(/[^\w\s]/g, '').trim();
 
@@ -95,6 +97,9 @@ class ChatbotService {
     }
 
     if (this.#hasAny(q, ['register', 'join', 'book']) && q.includes('event')) {
+      if (userRole && userRole !== ROLES.STUDENT) {
+        return 'Event booking is for student accounts. If you want to join events, please use a student login.';
+      }
       return 'Sure. Log in as a student, open the event you like, and register from there. The app only allows registration for events that are already published, so if an event is still pending approval it will not be joinable yet.';
     }
 
@@ -107,6 +112,9 @@ class ChatbotService {
     }
 
     if (this.#hasAny(q, ['pending', 'approve', 'approval', 'review']) && q.includes('event')) {
+      if (userRole === ROLES.STUDENT || userRole === ROLES.VENDOR) {
+        return 'Event approvals are handled by admins. You can view only published events once they are approved.';
+      }
       return 'Planner events do not publish instantly. They go into a pending queue so an admin can approve or deny them; once approved, the event becomes visible and students can register.';
     }
 
@@ -123,17 +131,32 @@ class ChatbotService {
     }
 
     if (q.includes('event')) {
+      if (userRole === ROLES.STUDENT) {
+        return 'You can browse published events, open details, and register for the ones you want. Your registrations and QR tickets are available in your bookings.';
+      }
+      if (userRole === ROLES.VENDOR) {
+        return 'You can browse published events and apply as a vendor for events that match your service. You can track your application status from your vendor section.';
+      }
+      if (userRole === ROLES.EVENT_PLANNER) {
+        return 'You can create and update events. Your event goes to pending review, and it becomes published after admin approval.';
+      }
+      if (userRole === ROLES.ADMIN) {
+        return 'You can review pending events, approve or deny them, and manage overall event visibility.';
+      }
       return 'You can browse published events, open an event for details, or create one if you are an event planner. Planner-created events wait for admin approval before students can see and register for them.';
     }
 
     if (this.#hasAny(q, ['vendor', 'stall', 'apply'])) {
+      if (userRole === ROLES.STUDENT) {
+        return 'Vendor application features are for vendor accounts. As a student, you can browse and register for published events.';
+      }
       return 'Vendors can browse published events and apply for a stall or service spot. After applying, they can track their application status while the event planner reviews it.';
     }
 
     return 'I can help with that. Could you tell me a little more about what you are trying to do: book an event, find a ticket, reset your password, create an event, or apply as a vendor?';
   }
 
-  askWithGemini(question, history = []) {
+  askWithGemini(question, history = [], userRole) {
     const url = new URL(
       `/models/${encodeURIComponent(env.geminiModel)}:generateContent?key=${encodeURIComponent(env.geminiApiKey)}`,
       env.geminiBaseUrl
@@ -159,6 +182,7 @@ class ChatbotService {
             {
               text: [
                 CHATBOT_CONTEXT,
+                this.#buildRoleInstruction(userRole),
                 conversationContext ? `Recent conversation:\n${conversationContext}` : '',
                 `User question: ${question}`,
                 'Answer naturally as AfterHours Assistant:'
@@ -236,6 +260,34 @@ class ChatbotService {
       })
       .filter(Boolean)
       .join('\n');
+  }
+
+  #normalizeRole(userRole) {
+    const role = String(userRole || '').trim().toLowerCase();
+    if (Object.values(ROLES).includes(role)) return role;
+    return null;
+  }
+
+  #buildRoleInstruction(userRole) {
+    if (!userRole) return 'User role is unknown. Give a general answer.';
+
+    if (userRole === ROLES.STUDENT) {
+      return 'User role is student. Focus only on student actions. Do not explain planner, vendor, or admin flows unless explicitly asked.';
+    }
+
+    if (userRole === ROLES.VENDOR) {
+      return 'User role is vendor. Focus only on vendor actions. Do not explain student, planner, or admin flows unless explicitly asked.';
+    }
+
+    if (userRole === ROLES.EVENT_PLANNER) {
+      return 'User role is event_planner. Focus on planner actions and related approval flow.';
+    }
+
+    if (userRole === ROLES.ADMIN) {
+      return 'User role is admin. Focus on admin actions and moderation capabilities.';
+    }
+
+    return 'User role is unknown. Give a general answer.';
   }
 }
 
