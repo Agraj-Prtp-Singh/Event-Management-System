@@ -114,7 +114,8 @@ function PublicOnlyRoute({ children }) {
 function App() {
   const fallbackRoute = getHomeRouteForRole(getStoredUser()?.role);
   const { pathname } = useLocation();
-  const showAskAI = pathname !== "/";
+  const hideAskAIPaths = ["/", "/login", "/register", "/forgot-password"];
+  const showAskAI = !hideAskAIPaths.includes(pathname);
 
   return (
     <>
