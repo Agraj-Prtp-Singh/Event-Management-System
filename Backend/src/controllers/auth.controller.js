@@ -5,7 +5,8 @@ const {
   validateSendOtpPayload,
   validateVerifyOtpPayload,
   validateForgotPasswordPayload,
-  validateResetPasswordPayload
+  validateResetPasswordPayload,
+  validateChangePasswordPayload
 } = require('../validators/auth.validator');
 const asyncHandler = require('../utils/asyncHandler');
 const HTTP_STATUS = require('../constants/httpStatus');
@@ -86,6 +87,17 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  validateChangePasswordPayload(req.body);
+  const data = await authService.changePassword(req.user.id, req.body);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Password changed successfully',
+    data
+  });
+});
+
 module.exports = {
   register,
   login,
@@ -93,5 +105,6 @@ module.exports = {
   sendOtp,
   verifyOtp,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  changePassword
 };

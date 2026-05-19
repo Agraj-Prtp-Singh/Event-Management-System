@@ -17,11 +17,13 @@ import StudentDashboard from "./pages/Studentdashboard";
 import BrowseStudentEvents from "./pages/BrowseStudentEvents";
 import StudentBookings from "./pages/StudentBookings";
 import StudentEventDetail from "./pages/StudentEventDetail";
+import StudentSettings from "./pages/StudentSettings";
 import PlannerDashboard from "./pages/Plannerdashboard";
 import CreateEvent from "./pages/Createevent";
 import Attendees from "./pages/Attendees";
 import PlannerVendorApplications from "./pages/PlannerVendorApplications";
 import PlannerScanner from "./pages/PlannerScanner";
+import PlannerSettings from "./pages/PlannerSettings";
 import VendorDashboard from "./pages/VendorDashboard";
 import VendorApplyEvents from "./pages/VendorApplyEvents";
 import VendorSettings from "./pages/VendorSettings";
@@ -229,6 +231,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/student/settings"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentLayout>
+                <StudentSettings />
+              </StudentLayout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/planner/dashboard"
@@ -276,6 +288,16 @@ function App() {
             <ProtectedRoute allowedRoles={["admin", "event_planner"]}>
               <PlannerLayout>
                 <PlannerVendorApplications />
+              </PlannerLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/planner/settings"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "event_planner"]}>
+              <PlannerLayout>
+                <PlannerSettings />
               </PlannerLayout>
             </ProtectedRoute>
           }

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Globe,
   Ticket,
+  Settings,
   LogOut,
 } from "lucide-react";
 import logo from "../assets/logo.png";
@@ -29,6 +30,12 @@ const navItems = [
     label: "My Bookings",
     icon: Ticket,
     to: "/student/bookings",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: Settings,
+    to: "/student/settings",
   },
 ];
 

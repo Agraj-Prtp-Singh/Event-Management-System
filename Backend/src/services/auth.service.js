@@ -80,6 +80,25 @@ class AuthService {
     return user;
   }
 
+  async changePassword(userId, payload) {
+    const user = await userRepository.findByIdWithPassword(userId);
+    if (!user) {
+      throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const isPasswordMatch = await bcrypt.compare(payload.currentPassword, user.passwordHash);
+    if (!isPasswordMatch) {
+      throw new AppError('Current password is incorrect', HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    user.passwordHash = await bcrypt.hash(payload.newPassword, 10);
+    await user.save();
+
+    return {
+      message: 'Password changed successfully'
+    };
+  }
+
   async sendOtp(payload) {
     const user = await userRepository.findByEmail(payload.email.toLowerCase());
     if (!user) {

@@ -6,6 +6,10 @@ const HTTP_STATUS = require('../constants/httpStatus');
 const { ROLES } = require('../constants/roles');
 const { EVENT_APPROVAL_STATUS } = require('../models/event.model');
 
+const activeEventFilter = () => ({
+  endDate: { $gte: new Date() }
+});
+
 class EventService {
   async createEvent(payload, user) {
     const isAdmin = user.role === ROLES.ADMIN;
@@ -27,7 +31,8 @@ class EventService {
     const pagination = sanitizePagination(query);
     const filter = {
       isPublished: true,
-      approvalStatus: EVENT_APPROVAL_STATUS.APPROVED
+      approvalStatus: EVENT_APPROVAL_STATUS.APPROVED,
+      ...activeEventFilter()
     };
 
     if (query.search && query.search.trim()) {
@@ -58,7 +63,10 @@ class EventService {
 
   async listEventsByPlanner(plannerId, query) {
     const pagination = sanitizePagination(query);
-    const filter = { createdBy: plannerId };
+    const filter = {
+      createdBy: plannerId,
+      ...activeEventFilter()
+    };
 
     if (query.search && query.search.trim()) {
       filter.$text = { $search: query.search.trim() };
@@ -87,10 +95,11 @@ class EventService {
   }
 
   async getPlannerStats(plannerId) {
-    const eventCount = await eventRepository.count({ createdBy: plannerId });
-    const totalCapacity = await eventRepository.sumCapacityByOwner(plannerId);
+    const activeFilter = activeEventFilter();
+    const eventCount = await eventRepository.count({ createdBy: plannerId, ...activeFilter });
+    const totalCapacity = await eventRepository.sumCapacityByOwner(plannerId, activeFilter);
 
-    const eventIds = await eventRepository.listIdsByOwner(plannerId);
+    const eventIds = await eventRepository.listIdsByOwner(plannerId, activeFilter);
     const ids = eventIds.map((event) => event._id);
     const attendeeCount = ids.length ? await registrationRepository.countByEventIds(ids) : 0;
     const fillRate = totalCapacity > 0 ? Math.round((attendeeCount / totalCapacity) * 100) : 0;
@@ -105,7 +114,7 @@ class EventService {
   }
 
   async listPlannerAttendees(plannerId) {
-    const eventIds = await eventRepository.listIdsByOwner(plannerId);
+    const eventIds = await eventRepository.listIdsByOwner(plannerId, activeEventFilter());
     const ids = eventIds.map((event) => event._id);
 
     if (ids.length === 0) {
@@ -173,7 +182,8 @@ class EventService {
     if (
       !event ||
       !event.isPublished ||
-      event.approvalStatus !== EVENT_APPROVAL_STATUS.APPROVED
+      event.approvalStatus !== EVENT_APPROVAL_STATUS.APPROVED ||
+      new Date(event.endDate) < new Date()
     ) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -235,6 +245,10 @@ class EventService {
     const event = await eventRepository.findById(eventId);
 
     if (!event) {
+      throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (new Date(event.endDate) < new Date()) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
 

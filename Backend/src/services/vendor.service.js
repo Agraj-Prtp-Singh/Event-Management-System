@@ -2,18 +2,24 @@ const vendorApplicationRepository = require('../repositories/vendorApplication.r
 const eventRepository = require('../repositories/event.repository');
 const userRepository = require('../repositories/user.repository');
 const notificationService = require('./notification.service');
+const emailService = require('./email.service');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
 const { ROLES } = require('../constants/roles');
 const { VENDOR_APPLICATION_STATUS } = require('../models/vendorApplication.model');
 const { EVENT_APPROVAL_STATUS } = require('../models/event.model');
 
+const activeEventFilter = () => ({
+  endDate: { $gte: new Date() }
+});
+
 class VendorService {
   async getVendorEvents(query = {}) {
     const filter = {
       isPublished: true,
       approvalStatus: EVENT_APPROVAL_STATUS.APPROVED,
-      openToVendors: { $ne: false }
+      openToVendors: { $ne: false },
+      ...activeEventFilter()
     };
 
     if (query.search && query.search.trim()) {
@@ -28,6 +34,10 @@ class VendorService {
 
     if (!event || !event.isPublished || event.approvalStatus !== EVENT_APPROVAL_STATUS.APPROVED) {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (new Date(event.endDate) < new Date()) {
+      throw new AppError('This event is no longer open to vendor applications', HTTP_STATUS.BAD_REQUEST);
     }
 
     if (!event.openToVendors) {
@@ -92,7 +102,10 @@ class VendorService {
     }
 
     const items = await vendorApplicationRepository.listByPlanner(plannerId, status);
-    return items.filter((item) => item.eventId);
+    return items.filter((item) => {
+      if (!item.eventId) return false;
+      return new Date(item.eventId.endDate) >= new Date();
+    });
   }
 
   async reviewVendorApplication(applicationId, decision, reviewer) {
@@ -147,7 +160,29 @@ class VendorService {
       );
     }
 
+    await this.#sendReviewEmail(updated, normalizedDecision);
+
     return updated;
+  }
+
+  async #sendReviewEmail(application, decision) {
+    try {
+      const vendor = application?.vendorId;
+
+      if (!vendor?.email) {
+        return;
+      }
+
+      await emailService.sendVendorApplicationReviewEmail({
+        toEmail: vendor.email,
+        fullName: vendor.fullName,
+        application,
+        event: application.eventId,
+        decision
+      });
+    } catch (error) {
+      console.warn(`Vendor application review email was not sent: ${error.message}`);
+    }
   }
 }
 

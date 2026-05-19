@@ -26,6 +26,10 @@ class VendorApplicationService {
       throw new AppError('Event not found', HTTP_STATUS.NOT_FOUND);
     }
 
+    if (new Date(event.endDate) < new Date()) {
+      throw new AppError('This event is no longer open to vendor applications', HTTP_STATUS.BAD_REQUEST);
+    }
+
     if (!event.openToVendors) {
       throw new AppError('This event is not open to vendor applications', HTTP_STATUS.BAD_REQUEST);
     }

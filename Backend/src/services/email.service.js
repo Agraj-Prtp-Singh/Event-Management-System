@@ -153,7 +153,7 @@ class EmailService {
     const greetingName = fullName || 'there';
 
     const heading = isApproved
-      ? 'Your vendor application has been approved'
+      ? 'Your stall has been approved'
       : 'Your vendor application has been rejected';
 
     const nextStepMessage = isApproved
@@ -163,7 +163,7 @@ class EmailService {
     await transporter.sendMail({
       from: `"${env.smtpFromName}" <${env.smtpFromEmail}>`,
       to: toEmail,
-      subject: `Vendor application ${subjectStatus}: ${eventTitle}`,
+      subject: `${isApproved ? 'Stall approved' : 'Vendor application rejected'}: ${eventTitle}`,
       text: [
         `Hi ${greetingName},`,
         '',

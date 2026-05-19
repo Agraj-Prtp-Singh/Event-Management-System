@@ -139,11 +139,32 @@ function validateResetPasswordPayload(payload) {
   }
 }
 
+function validateChangePasswordPayload(payload) {
+  const errors = [];
+
+  if (!payload.currentPassword) {
+    errors.push('currentPassword is required');
+  }
+
+  if (!payload.newPassword || String(payload.newPassword).length < 6) {
+    errors.push('newPassword must be at least 6 characters long');
+  }
+
+  if (payload.currentPassword && payload.newPassword && payload.currentPassword === payload.newPassword) {
+    errors.push('newPassword must be different from currentPassword');
+  }
+
+  if (errors.length) {
+    throw new AppError(errors.join(', '), HTTP_STATUS.BAD_REQUEST);
+  }
+}
+
 module.exports = {
   validateRegisterPayload,
   validateLoginPayload,
   validateSendOtpPayload,
   validateVerifyOtpPayload,
   validateForgotPasswordPayload,
-  validateResetPasswordPayload
+  validateResetPasswordPayload,
+  validateChangePasswordPayload
 };

@@ -3,7 +3,7 @@ import { Users, QrCode, CircleCheck, Bot } from "lucide-react";
 export default function Footer() {
   return (
     <div className="bg-[#0b0220] text-gray-300 overflow-visible">
-      <div className="flex flex-col items-center gap-3 px-6 py-4">
+      <div className="flex flex-col items-center px-6 py-6">
         <div className="flex w-full flex-wrap justify-center gap-x-12 gap-y-4">
           {/* Role */}
           <div className="flex flex-col items-center text-center min-w-[120px]">
@@ -47,7 +47,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <span className="text-xs font-medium text-gray-400">
+        <span className="mt-8 text-xs font-medium text-gray-400">
           &copy; 2026 EMS Collaborative Development
         </span>
       </div>

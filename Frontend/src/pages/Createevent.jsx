@@ -35,6 +35,48 @@ const formatDateTimeLocal = (value) => {
   return normalized.toISOString().slice(0, 16);
 };
 
+const FIELD_ERROR_KEYS = [
+  "title",
+  "description",
+  "location",
+  "startDate",
+  "endDate",
+  "capacity",
+  "ticketPrice",
+  "vendorSecurityDeposit",
+  "vendorPaymentQrImage",
+];
+
+const REQUIRED_FIELD_LABELS = {
+  title: "Event title",
+  description: "Description",
+  startDate: "Start date",
+  endDate: "End date",
+  location: "Location / Venue",
+  capacity: "Capacity",
+};
+
+const mapErrorToField = (message) => {
+  const fieldErrors = {};
+  const messages = String(message || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  messages.forEach((text) => {
+    const normalized = text.toLowerCase();
+    const matchedField = FIELD_ERROR_KEYS.find((field) =>
+      normalized.includes(field.toLowerCase()),
+    );
+
+    if (matchedField) {
+      fieldErrors[matchedField] = text;
+    }
+  });
+
+  return fieldErrors;
+};
+
 export default function CreateEvent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,6 +89,7 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(Boolean(editId));
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -85,8 +128,15 @@ export default function CreateEvent() {
       .finally(() => setLoadingEvent(false));
   }, [editId]);
 
-  const handleChange = (field) => (e) =>
+  const handleChange = (field) => (e) => {
     setForm((current) => ({ ...current, [field]: e.target.value }));
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleBanner = (e) => {
     const file = e.target.files[0];
@@ -101,12 +151,14 @@ export default function CreateEvent() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Payment QR must be an image file.");
+      setFieldErrors({ vendorPaymentQrImage: "Payment QR must be an image file." });
+      setError("");
       return;
     }
 
     if (file.size > 2_500_000) {
-      setError("Payment QR image must be smaller than 2.5MB.");
+      setFieldErrors({ vendorPaymentQrImage: "Payment QR image must be smaller than 2.5MB." });
+      setError("");
       return;
     }
 
@@ -114,22 +166,41 @@ export default function CreateEvent() {
       const dataUrl = await readImageAsDataUrl(file);
       setPaymentQrPreview(dataUrl);
       setForm((current) => ({ ...current, vendorPaymentQrImage: dataUrl }));
+      setFieldErrors((current) => {
+        const next = { ...current };
+        delete next.vendorPaymentQrImage;
+        return next;
+      });
       setError("");
     } catch (err) {
-      setError("Could not read the Payment QR image.");
+      setFieldErrors({ vendorPaymentQrImage: "Could not read the Payment QR image." });
+      setError("");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (!form.title || !form.startDate || !form.location) {
-      setError("Please fill in all required fields (title, start date, location).");
+    const nextFieldErrors = Object.entries(REQUIRED_FIELD_LABELS).reduce(
+      (errors, [field, label]) => {
+        if (!String(form[field] || "").trim()) {
+          errors[field] = `${label} is required.`;
+        }
+        return errors;
+      },
+      {},
+    );
+
+    if (Object.keys(nextFieldErrors).length) {
+      setFieldErrors(nextFieldErrors);
+      setError("");
       return;
     }
 
     if (form.endDate && new Date(form.endDate) < new Date(form.startDate)) {
-      setError("End date cannot be before start date.");
+      setFieldErrors({ endDate: "End date cannot be before start date." });
+      setError("");
       return;
     }
 
@@ -138,7 +209,10 @@ export default function CreateEvent() {
       Number(form.vendorSecurityDeposit || 0) > 0 &&
       !form.vendorPaymentQrImage
     ) {
-      setError("Please upload a Payment QR for the vendor security deposit.");
+      setFieldErrors({
+        vendorPaymentQrImage: "Please upload a Payment QR for the vendor security deposit.",
+      });
+      setError("");
       return;
     }
 
@@ -176,7 +250,11 @@ export default function CreateEvent() {
       setSuccess(true);
       setTimeout(() => navigate("/planner/dashboard"), 1200);
     } catch (err) {
-      setError(err.message || "Failed to save event. Please try again.");
+      const message = err.message || "Failed to save event. Please try again.";
+      const nextFieldErrors = mapErrorToField(message);
+
+      setFieldErrors(nextFieldErrors);
+      setError(Object.keys(nextFieldErrors).length ? "" : message);
     } finally {
       setLoading(false);
     }
@@ -227,11 +305,14 @@ export default function CreateEvent() {
                 onChange={handleChange("title")}
                 required
               />
+              {fieldErrors.title && (
+                <p className="mt-1 text-xs font-medium text-red-500">{fieldErrors.title}</p>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-1 block">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 rows={3}
@@ -240,6 +321,11 @@ export default function CreateEvent() {
                 value={form.description}
                 onChange={handleChange("description")}
               />
+              {fieldErrors.description && (
+                <p className="mt-1 text-xs font-medium text-red-500">
+                  {fieldErrors.description}
+                </p>
+              )}
             </div>
 
             <div>
@@ -286,10 +372,15 @@ export default function CreateEvent() {
                   onChange={handleChange("startDate")}
                   required
                 />
+                {fieldErrors.startDate && (
+                  <p className="mt-1 text-xs font-medium text-red-500">
+                    {fieldErrors.startDate}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-1 block">
-                  End Date
+                  End Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="datetime-local"
@@ -297,6 +388,11 @@ export default function CreateEvent() {
                   value={form.endDate}
                   onChange={handleChange("endDate")}
                 />
+                {fieldErrors.endDate && (
+                  <p className="mt-1 text-xs font-medium text-red-500">
+                    {fieldErrors.endDate}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -311,6 +407,9 @@ export default function CreateEvent() {
                 onChange={handleChange("location")}
                 required
               />
+              {fieldErrors.location && (
+                <p className="mt-1 text-xs font-medium text-red-500">{fieldErrors.location}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -334,7 +433,7 @@ export default function CreateEvent() {
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-1 block">
-                  Capacity
+                  Capacity (max attendees) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -344,6 +443,11 @@ export default function CreateEvent() {
                   value={form.capacity}
                   onChange={handleChange("capacity")}
                 />
+                {fieldErrors.capacity && (
+                  <p className="mt-1 text-xs font-medium text-red-500">
+                    {fieldErrors.capacity}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -360,6 +464,11 @@ export default function CreateEvent() {
                   value={form.ticketPrice}
                   onChange={handleChange("ticketPrice")}
                 />
+                {fieldErrors.ticketPrice && (
+                  <p className="mt-1 text-xs font-medium text-red-500">
+                    {fieldErrors.ticketPrice}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-1 block">
@@ -416,6 +525,11 @@ export default function CreateEvent() {
                       value={form.vendorSecurityDeposit}
                       onChange={handleChange("vendorSecurityDeposit")}
                     />
+                    {fieldErrors.vendorSecurityDeposit && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {fieldErrors.vendorSecurityDeposit}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -443,6 +557,11 @@ export default function CreateEvent() {
                         onChange={handlePaymentQr}
                       />
                     </label>
+                    {fieldErrors.vendorPaymentQrImage && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {fieldErrors.vendorPaymentQrImage}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>

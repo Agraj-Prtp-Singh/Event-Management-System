@@ -15,6 +15,14 @@ const EMPTY_STATS = [
   { value: "0", label: "Capacity" },
 ];
 
+const isActiveEvent = (event) => {
+  const dateValue = event?.endDate || event?.startDate;
+  if (!dateValue) return false;
+
+  const eventDate = new Date(dateValue);
+  return !Number.isNaN(eventDate.getTime()) && eventDate >= new Date();
+};
+
 export default function VendorDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(EMPTY_STATS);
@@ -32,7 +40,7 @@ export default function VendorDashboard() {
     getPlannerEvents()
       .then((data) => {
         const list = Array.isArray(data) ? data : [];
-        setEvents(list);
+        setEvents(list.filter(isActiveEvent));
       })
       .catch((err) => {
         setError(err.message || "Could not load planner events.");
@@ -59,7 +67,10 @@ export default function VendorDashboard() {
 
     getVendorApplications("approved")
       .then((data) => {
-        setApprovedVendors(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setApprovedVendors(
+          list.filter((application) => isActiveEvent(application.eventId)),
+        );
       })
       .catch((err) => {
         setError(err.message || "Could not load approved vendors.");

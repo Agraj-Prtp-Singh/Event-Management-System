@@ -6,13 +6,13 @@ export default function Navbar({ variant = "default" }) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-[#0b0220] text-gray-300 flex justify-between items-center px-4 py-2 w-full h-16">
+    <div className="bg-[#0b0220] text-gray-300 flex justify-between items-center px-5 py-3 w-full h-20">
       {/* Logo */}
       <div onClick={() => navigate("/")} className="cursor-pointer">
         <img
           src={logo}
           alt="after-hour-events"
-          className="h-16 w-16 sm:-ml-3 sm:h-30 sm:w-30"
+          className="h-20 w-20 sm:-ml-3 sm:h-36 sm:w-36"
         />
       </div>
 

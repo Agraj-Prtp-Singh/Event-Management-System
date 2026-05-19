@@ -30,8 +30,8 @@ class EventRepository {
       .populate('createdBy', 'fullName phone email role');
   }
 
-  listIdsByOwner(ownerId) {
-    return Event.find({ createdBy: ownerId }).select('_id');
+  listIdsByOwner(ownerId, filter = {}) {
+    return Event.find({ createdBy: ownerId, ...filter }).select('_id');
   }
 
   listOpenToVendors() {
@@ -40,9 +40,9 @@ class EventRepository {
       .populate('createdBy', 'fullName phone email role');
   }
 
-  async sumCapacityByOwner(ownerId) {
+  async sumCapacityByOwner(ownerId, filter = {}) {
     const result = await Event.aggregate([
-      { $match: { createdBy: new mongoose.Types.ObjectId(ownerId) } },
+      { $match: { createdBy: new mongoose.Types.ObjectId(ownerId), ...filter } },
       { $group: { _id: null, totalCapacity: { $sum: '$capacity' } } }
     ]);
     return result[0]?.totalCapacity ?? 0;

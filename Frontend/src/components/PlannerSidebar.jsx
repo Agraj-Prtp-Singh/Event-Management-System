@@ -8,6 +8,7 @@ import {
   ScanQrCode,
   Users,
   PuzzleIcon,
+  Settings,
   LogOut,
 } from "lucide-react";
 import logo from "../assets/logo.png";
@@ -19,6 +20,7 @@ const navItems = [
   { id: "attendees", label: "Attendees",  icon: Users,          to: "/planner/attendees" },
   { id: "scanner",   label: "Scanner",    icon: ScanQrCode,     to: "/planner/scanner"   },
   { id: "apps",      label: "Vendor Apps",icon: PuzzleIcon,     to: "/planner/apps"      },
+  { id: "settings",  label: "Settings",   icon: Settings,       to: "/planner/settings"  },
 ];
 
 export default function PlannerSidebar() {

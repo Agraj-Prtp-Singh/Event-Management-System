@@ -12,6 +12,10 @@ class UserRepository {
   findById(id) {
     return User.findById(id).select('-passwordHash');
   }
+
+  findByIdWithPassword(id) {
+    return User.findById(id);
+  }
 }
 
 module.exports = new UserRepository();

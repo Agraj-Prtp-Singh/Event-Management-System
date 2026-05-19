@@ -82,7 +82,7 @@ export default function PlannerVendorApplications() {
         ) : applications.length === 0 ? (
           <p className="text-sm text-slate-500">No vendor applications yet.</p>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid max-h-[calc(100vh-24rem)] min-h-[18rem] gap-4 overflow-y-auto pr-2">
             {applications.map((application) => {
               const status = application.status || "pending";
               const isPending = status === "pending";

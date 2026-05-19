@@ -4,6 +4,17 @@ const BASE_URL = "http://localhost:5000/api/v1";
 const AUTH_URL = `${BASE_URL}/auth`;
 
 const unwrapResponse = (response) => response.data?.data ?? response.data;
+const getAuthConfig = () => {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  };
+};
+
 const getApiErrorMessage = (error, fallbackMessage) => {
   if (error.response) {
     return (
@@ -18,6 +29,20 @@ const getApiErrorMessage = (error, fallbackMessage) => {
   }
 
   return fallbackMessage;
+};
+
+export const changePassword = async ({ currentPassword, newPassword }) => {
+  try {
+    const response = await axios.post(
+      `${AUTH_URL}/change-password`,
+      { currentPassword, newPassword },
+      getAuthConfig(),
+    );
+
+    return unwrapResponse(response);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, "Password change failed"));
+  }
 };
 
 export const loginUser = async ({ email, password }) => {
