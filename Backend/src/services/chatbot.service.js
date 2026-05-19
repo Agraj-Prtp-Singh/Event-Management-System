@@ -64,21 +64,27 @@ class ChatbotService {
         return { answer, source: 'gemini' };
       } catch (error) {
         return {
-          answer: this.askWithFallback(cleanQuestion, normalizedRole),
+          answer: this.askWithFallback(cleanQuestion, history, normalizedRole),
           source: 'fallback'
         };
       }
     }
 
     return {
-      answer: this.askWithFallback(cleanQuestion, normalizedRole),
+      answer: this.askWithFallback(cleanQuestion, history, normalizedRole),
       source: 'fallback'
     };
   }
 
-  askWithFallback(question, userRole) {
+  askWithFallback(question, history = [], userRole) {
     const q = question.toLowerCase();
     const normalizedQuestion = q.replace(/[^\w\s]/g, '').trim();
+    const lastAssistantReply = String(
+      history
+        .slice()
+        .reverse()
+        .find((message) => message?.role === 'assistant')?.text || ''
+    ).toLowerCase();
 
     if (this.#isGreeting(normalizedQuestion)) {
       return 'Hi, nice to see you. What do you need help with today: booking an event, finding your ticket, resetting your password, or applying as a vendor?';
@@ -94,6 +100,13 @@ class ChatbotService {
 
     if (this.#hasAny(q, ['forgot', 'reset password', 'password reset'])) {
       return 'No worries, you can reset your password with a 6-digit OTP. Enter your email on the forgot-password screen, check your inbox for the OTP, then use that code with your new password.';
+    }
+
+    if (
+      this.#hasAny(q, ['sign up', 'signup', 'register account', 'create account', 'become']) &&
+      q.includes('vendor')
+    ) {
+      return 'Great question. As a student, you cannot apply as a vendor directly from the student role. Create or log in with a vendor account first, then go to vendor events and apply from there.';
     }
 
     if (this.#hasAny(q, ['register', 'join', 'book']) && q.includes('event')) {
@@ -147,6 +160,13 @@ class ChatbotService {
     }
 
     if (this.#hasAny(q, ['vendor', 'stall', 'apply'])) {
+      if (
+        this.#hasAny(q, ['why', 'then why', 'out of context', 'did you say']) &&
+        lastAssistantReply.includes('vendor application features are for vendor accounts')
+      ) {
+        return 'You are right to ask. I meant: students cannot apply as vendor from a student account. To do that, use a vendor account, then apply to events from the vendor section.';
+      }
+
       if (userRole === ROLES.STUDENT) {
         return 'Vendor application features are for vendor accounts. As a student, you can browse and register for published events.';
       }
