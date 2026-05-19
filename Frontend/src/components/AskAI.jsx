@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MessageCircleMore, X, Send } from "lucide-react";
+import { getStoredToken } from "../utils/auth";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
@@ -34,9 +35,13 @@ export default function AskAI() {
     setLoading(true);
 
     try {
+      const token = getStoredToken();
       const response = await fetch(`${API_BASE_URL}/chatbot/ask`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           question: userMessage.text,
           history: messages.slice(-8),
