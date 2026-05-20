@@ -1,5 +1,7 @@
 const eventRepository = require('../repositories/event.repository');
 const registrationRepository = require('../repositories/registration.repository');
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
 const sanitizePagination = require('../utils/pagination');
 const AppError = require('../utils/appError');
 const HTTP_STATUS = require('../constants/httpStatus');
@@ -140,6 +142,19 @@ class EventService {
         eventId: parsed.eventId
       };
     } catch (error) {
+      try {
+        const decodedTicket = jwt.verify(value, env.jwtSecret);
+
+        if (decodedTicket.typ === 'event_ticket' && decodedTicket.rid) {
+          return {
+            registrationId: decodedTicket.rid,
+            eventId: decodedTicket.eid
+          };
+        }
+      } catch (tokenError) {
+        // Not a signed ticket token; treat it as a plain ticket code.
+      }
+
       return { ticketCode: value };
     }
   }
@@ -162,11 +177,10 @@ class EventService {
       throw new AppError('Ticket event does not match this registration', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const isOwner = String(registration.eventId?.createdBy) === user.id;
-    const isAdmin = user.role === ROLES.ADMIN;
+    const canUseScanner = user.role === ROLES.EVENT_PLANNER || user.role === ROLES.ADMIN;
 
-    if (!isOwner && !isAdmin) {
-      throw new AppError('Only the event planner can check in this attendee', HTTP_STATUS.FORBIDDEN);
+    if (!canUseScanner) {
+      throw new AppError('Only event planners or admins can check in attendees', HTTP_STATUS.FORBIDDEN);
     }
 
     if (registration.checkedInAt) {

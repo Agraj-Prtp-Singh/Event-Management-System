@@ -44,6 +44,7 @@ export default function PlannerScanner() {
 
     scanningRef.current = true;
     setLoading(true);
+    setCameraError("");
     setResult(null);
 
     try {
@@ -55,6 +56,13 @@ export default function PlannerScanner() {
         type: "success",
         title: attendee.fullName || "Attendee checked in",
         message: `${event.title || "Event"} - ${formatCheckedInAt(registration.checkedInAt)}`,
+        details: {
+          eventTitle: event.title || "Event",
+          email: attendee.email || "Not provided",
+          phone: attendee.phone || "Not provided",
+          ticketCode: registration.ticketCode || "Not issued",
+          checkedInAt: formatCheckedInAt(registration.checkedInAt),
+        },
       });
       setManualCode("");
       stopCamera();
@@ -78,6 +86,14 @@ export default function PlannerScanner() {
     }
 
     return new window.BarcodeDetector({ formats: ["qr_code"] });
+  };
+
+  const handleManualCodeChange = (event) => {
+    setManualCode(event.target.value);
+
+    if (cameraError) {
+      setCameraError("");
+    }
   };
 
   const loadImageFromFile = (file) =>
@@ -136,7 +152,7 @@ export default function PlannerScanner() {
 
     const detector = createQrDetector();
     if (!detector) {
-      setCameraError("QR scanning is not supported in this browser. Paste the QR text or ticket code below.");
+      setCameraError("Camera scanning is not supported in this browser. Manual check-in still works below.");
       return;
     }
 
@@ -278,7 +294,7 @@ export default function PlannerScanner() {
 
             <textarea
               value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
+              onChange={handleManualCodeChange}
               placeholder="AHE-XXXX or QR payload"
               className="min-h-32 w-full resize-none rounded-xl border border-black/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-400"
             />
@@ -303,10 +319,35 @@ export default function PlannerScanner() {
                 <div className="flex items-start gap-2">
                   {result?.type === "success" ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
                   <div>
-                    <p className="font-semibold">{result?.title || "Scanner unavailable"}</p>
+                    <p className="font-semibold">{result?.title || "Camera scanner unavailable"}</p>
                     <p className="mt-0.5">{result?.message || cameraError}</p>
                   </div>
                 </div>
+
+                {result?.type === "success" && result.details && (
+                  <div className="mt-3 grid gap-2 border-t border-green-200 pt-3 text-xs">
+                    <div className="flex justify-between gap-3">
+                      <span className="font-semibold text-green-800">Event</span>
+                      <span className="text-right">{result.details.eventTitle}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="font-semibold text-green-800">Email</span>
+                      <span className="text-right break-all">{result.details.email}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="font-semibold text-green-800">Phone</span>
+                      <span className="text-right">{result.details.phone}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="font-semibold text-green-800">Ticket</span>
+                      <span className="font-mono text-right">{result.details.ticketCode}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="font-semibold text-green-800">Checked in</span>
+                      <span className="text-right">{result.details.checkedInAt}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
