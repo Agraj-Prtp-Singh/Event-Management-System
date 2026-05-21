@@ -87,3 +87,73 @@ export const deleteAdminEvent = async (eventId) => {
     );
   }
 };
+
+export const getAdminCategories = async (params = {}) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/admin/categories`, {
+      ...getAuthHeaders(),
+      params,
+    });
+
+    return response.data?.data ?? { items: [], pagination: {} };
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch categories"
+    );
+  }
+};
+
+export const createAdminCategory = async (categoryData) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/admin/categories`,
+      categoryData,
+      getAuthHeaders()
+    );
+
+    return normalizeResponse(response);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to create category"
+    );
+  }
+};
+
+export const updateAdminCategory = async (categoryId, categoryData) => {
+  try {
+    const response = await axios.patch(
+      `${BASE_URL}/admin/categories/${categoryId}`,
+      categoryData,
+      getAuthHeaders()
+    );
+
+    return normalizeResponse(response);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to update category"
+    );
+  }
+};
+
+export const deleteAdminCategory = async (categoryId) => {
+  try {
+    await axios.delete(
+      `${BASE_URL}/admin/categories/${categoryId}`,
+      getAuthHeaders()
+    );
+
+    return true;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to delete category"
+    );
+  }
+};

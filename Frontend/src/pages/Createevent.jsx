@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CalendarDays, Loader2, CheckCircle } from "lucide-react";
 import { createEvent, getPlannerEvents, updateEvent } from "../api/planner";
+import { getActiveCategories } from "../api/categories";
 
 const EMPTY_FORM = {
   title: "",
@@ -92,6 +93,16 @@ export default function CreateEvent() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      const categoryList = await getActiveCategories();
+      setCategories(categoryList);
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (!editId) {
@@ -423,12 +434,12 @@ export default function CreateEvent() {
                   onChange={handleChange("category")}
                 >
                   <option value="">Select category</option>
-                  <option value="Tech">Tech</option>
-                  <option value="Social">Social</option>
-                  <option value="Career">Career</option>
-                  <option value="Arts">Arts</option>
-                  <option value="Business">Business</option>
-                  <option value="Other">Other</option>
+
+                  {categories.map((category) => (
+                    <option key={category._id || category.name} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
